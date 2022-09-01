@@ -1,0 +1,64 @@
+<launch>
+
+  <arg name="pi/2" value="1.5707963267948966" />
+
+  <arg name="online" default="false"/>
+  <arg name="rectify" default="true"/>
+  <arg name="rate" default="2" />
+  <arg name="need_split" default="false" />
+
+  <!--arg name="bag_file" default="/home/dxq/data/bag/YQ/thomas_2017-05-09-10-06-54.bag"/-->
+  <!--arg name="bag_file" default="/home/dxq/data/bag/YQ/raw_data/thomas_2017-05-19-14-58-03.bag"/-->
+  <!--arg name="bag_file" default="/home/turtle/data/thomas_2017-08-28-16-51-37.bag"/-->
+  <!-- <arg name="bag_file" default="/media/zzq/BackupDrive/Dataset/YQ/thomas_2017-08-23-09-40-13.bag"/> -->
+   <arg name="bag_file" default="/media/zzq/BackupDrive/Dataset/YQ/thomas_2017-08-27-15-22-11.bag"/> 
+   <!-- <arg name="bag_file" default="/media/zzq/BackupDrive/Dataset/YQ/thomas_2017-08-28-17-06-06.bag"/>  -->
+<!-- <arg name="bag_file" default="/media/zzq/BackupDrive/Dataset/YQ/thomas_2018-01-29-11-09-15.bag"/> -->
+
+  <!--Source: from live or decompress from bag-->
+  <!--Live-->
+  <node pkg="usb_cam" type="usb_cam_node" name="camera" output="screen" if="$(arg online)" required="true">
+    <param name="video_device" value="/dev/video1"/>
+    <param name="image_width" value="1344"/>
+    <param name="image_height" value="376"/>
+    <param name="pixel_format" value="yuyv"/>
+    <param name="camera_frame_id" value="zed"/>
+    <param name="camera_name" value="zed"/>
+  </node>
+  <!--Read from bag and decompress it-->
+  <!-- -u 855-->
+  <group unless="$(arg online)">
+    <param name="/use_sim_time" value="true"/>
+    <node pkg="rosbag" type="play" name="player" output="screen" args=" -s 0 --clock --pause --rate $(arg rate) $(arg bag_file)" required="true"/>
+    <!--node pkg="image_transport" type="republish" name="republisher" args="compressed in:=/camera/image_raw out:=/camera/image_raw_decompressed"/-->
+  </group>
+
+
+  <!--Split it-->
+  <!--node pkg="ssd_detection" type="split.py" name="split" output="screen" if="$(arg need_split)"/-->
+
+  <group unless="$(arg need_split)">
+    <node pkg="image_transport" type="republish" name="republisher_left" args="compressed in:=/pointgrey/left/image_raw raw out:=/camera/left/image_raw"/>
+    <node pkg="image_transport" type="republish" name="republisher_right" args="compressed in:=/pointgrey/right/image_raw raw out:=/camera/right/image_raw"/>
+    <node pkg="ov_msckf" type="ci_pointgrey.py" name="ci" output="screen"/>
+  </group>
+
+  <!--Do undistortion & rectification-->
+  <group ns="/camera/left/" >
+    <node pkg="image_proc" type="image_proc" name="left_image_proc">
+      <param name="image_raw" value="/camera/left/image_raw"/>
+      <param name="camera_info" value="/camera/left/camera_info"/>
+
+    </node>
+  </group>
+  <group ns="/camera/right/">
+    <node pkg="image_proc" type="image_proc" name="right_image_proc">
+      <param name="image_raw" value="/camera/right/image_raw"/>
+      <param name="camera_info" value="/camera/right/camera_info"/>
+
+    </node>
+  </group>
+
+
+</launch>
+

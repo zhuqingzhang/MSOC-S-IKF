@@ -1,0 +1,172 @@
+/*
+ * OpenVINS: An Open Platform for Visual-Inertial Research
+ * Copyright (C) 2019 Patrick Geneva
+ * Copyright (C) 2019 Kevin Eckenhoff
+ * Copyright (C) 2019 Guoquan Huang
+ * Copyright (C) 2019 OpenVINS Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+#ifndef OV_RIMSCKF_ROSVISUALIZER_H
+#define OV_RIMSCKF_ROSVISUALIZER_H
+
+
+
+#include <ros/ros.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
+#include <sensor_msgs/CameraInfo.h>
+#include <std_msgs/Float64.h>
+#include <nav_msgs/Path.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <tf/transform_broadcaster.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <boost/filesystem.hpp>
+
+#include "VioManager.h"
+#include "sim/Simulator.h"
+#include "utils/dataset_reader.h"
+
+
+namespace ov_rimsckf {
+
+
+    /**
+     * @brief Helper class that will publish results onto the ROS framework.
+     *
+     * Also save to file the current total state and covariance along with the groundtruth if we are simulating.
+     * We visualize the following things:
+     * - State of the system on TF, pose message, and path
+     * - Image of our tracker
+     * - Our different features (SLAM, MSCKF, ARUCO)
+     * - Groundtruth trajectory if we have it
+     */
+    class RosVisualizer {
+
+    public:
+
+        /**
+         * @brief Default constructor
+         * @param nh ROS node handler
+         * @param app Core estimator manager
+         * @param sim Simulator if we are simulating
+         */
+        RosVisualizer(ros::NodeHandle &nh, VioManager* app, Simulator* sim=nullptr);
+
+
+        /**
+         * @brief Will visualize the system if we have new things
+         */
+        void visualize();
+
+        /**
+         * @brief Will publish our odometry message for the current timestep.
+         * This will take the current state estimate and get the propagated pose to the desired time.
+         * This can be used to get pose estimates on systems which require high frequency pose estimates.
+         */
+        void visualize_odometry(double timestamp);
+
+        /**
+         * @brief After the run has ended, print results
+         */
+        void visualize_final();
+
+
+    protected:
+
+        /// Publish the current state
+        void publish_state();
+
+        /// Publish the active tracking image
+        void publish_images();
+
+        /// Publish current features
+        void publish_features();
+
+        /// Publish groundtruth (if we have it)
+        void publish_groundtruth();
+
+        /// Publish keyframe information of the marginalized pose and tracks
+        void publish_keyframe_information();
+
+        /// Save current estimate state and groundtruth including calibration
+        void sim_save_total_state_to_file();
+
+        /// ROS node handle that we publish onto
+        ros::NodeHandle _nh;
+
+        /// Core application of the filter system
+        VioManager* _app;
+
+        /// Simulator (is nullptr if we are not sim'ing)
+        Simulator* _sim;
+
+        // Our publishers
+        ros::Publisher pub_poseimu,pub_poseimu_rect,pub_transform, pub_odomimu, pub_pathimu, pub_pathimu_rect;
+        ros::Publisher pub_points_msckf, pub_points_slam, pub_points_aruco, pub_points_sim, pub_points_sim_matching_map;
+        ros::Publisher pub_tracks, pub_match_image, pub_match_location;
+        ros::Publisher pub_keyframe_pose, pub_keyframe_point, pub_keyframe_extrinsic, pub_keyframe_intrinsics;
+        ros::Publisher pub_g_bias, pub_a_bias;
+        tf::TransformBroadcaster *mTfBr;
+
+        // For path viz
+        unsigned int poses_seq_imu = 0;
+        vector<geometry_msgs::PoseStamped> poses_imu;
+        vector<geometry_msgs::PoseStamped> poses_rect_imu;
+
+        vector<Eigen::Vector3d> map_match_location;
+
+        
+
+        // Groundtruth infomation
+        ros::Publisher pub_pathgt, pub_posegt;
+        double summed_rmse_ori = 0.0;
+        double summed_rmse_pos = 0.0;
+        double summed_nees_ori = 0.0;
+        double summed_nees_pos = 0.0;
+        size_t summed_number = 0;
+
+        // Start and end timestamps
+        bool start_time_set = false;
+        boost::posix_time::ptime rT1, rT2;
+
+        // Our groundtruth states
+        std::map<double, Eigen::Matrix<double,17,1>> gt_states;
+
+        std::map<double, Eigen::Matrix<double,8,1>> gt_states_tum;
+
+        // For path viz
+        unsigned int poses_seq_gt = 0;
+        vector<geometry_msgs::PoseStamped> poses_gt;
+        bool publish_global2imu_tf = true;
+        bool publish_calibration_tf = true;
+
+        // Files and if we should save total state
+        bool save_total_state;
+        std::ofstream of_state_est, of_state_std, of_state_gt, of_match_position_vins;
+
+    };
+
+
+}
+
+
+#endif //OV_RIMSCKF_ROSVISUALIZER_H

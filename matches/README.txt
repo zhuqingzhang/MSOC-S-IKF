@@ -1,0 +1,7 @@
+Each folder contains the corresponding matching information and the ground truth.
+Each matching information txt has the following format:
+
+...
+query_image_timestep/name map_image_timestep/name number_of_feature_matches
+feat1_u_in_query_image feat1_v_in_query_image feat1_u_in_map_image feat1_v_in_map_image feat1_x_anchor_in_map_image feat1_y_anchor_in_map_image feat1_z_anchor_in_map_image ... featN_u_in_query_image featN_v_in_query_image featN_u_in_map_image featN_v_in_map_image featN_x_anchor_in_map_image featN_y_anchor_in_map_image featN_z_anchor_in_map_image
+...
