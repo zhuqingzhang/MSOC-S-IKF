@@ -19,7 +19,7 @@ The folder 'docs' provides our original paper and the related supplementary mate
 
 
 ## Installation
-
+This repository is currently only support ROS1. All the dependencies is the as those in Open-VINS. You can follow the guidance of [Open-VINS Installation](https://docs.openvins.com/gs-installing.html) to install the dependencies.
 
 
 ## Usage
