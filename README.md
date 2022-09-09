@@ -4,9 +4,9 @@
 
 This repository contains the source code of the algorithm MSOC-S-IKF (Multiple State Observability Constraint-Schmidt-Invariant Kalman Filter), which is a consistent and efficient map-based visual inertial localization algorithm. This algorithm is based on the open-sourced framework [Open-VINS](https://github.com/rpng/open_vins).
 
-The folder 'ri_msckf' is the main body of MSOC-S-IKF, where we implemented a right-invariant EKF version of Open-VINS, and the right-invriant EKF vins is combined with the Schmidt EKF and the Observability-Constraint technique to get our MSOC-S-IKF. 
+The folder 'ov_rimsckf' is the main body of MSOC-S-IKF, where we implemented a right-invariant EKF version of Open-VINS, and the right-invriant EKF vins is combined with the Schmidt EKF and the Observability-Constraint technique to get our MSOC-S-IKF. 
 
-The folder 'msckf' contains a extended version of  the original Open-VINS, where we implemented a Schmidt EKF for  map-based visual inertial localization. This block can be used as a baseline to compared with the 'ri_msckf'.
+The folder 'ov_msckf' contains an extended version of  the original Open-VINS, where we implemented a Schmidt EKF for  map-based visual inertial localization. This block can be used as a baseline to compared with the 'ri_msckf'.
 
 The folder 'matches' provides feature matching information between the query sequences and the maps on  different [used dataset](#dataset) . 
 
@@ -19,7 +19,7 @@ The folder 'docs' provides our original paper and the related supplementary mate
 
 
 ## Installation
-
+This repository is currently only support ROS1. All the dependencies is the as those in Open-VINS. You can follow the guidance of [Open-VINS Installation](https://docs.openvins.com/gs-installing.html) to install the dependencies.
 
 
 ## Usage
@@ -74,5 +74,5 @@ In the paper, there are four kinds of datasets are used.
 
 - [4seasons](https://www.4seasons-dataset.com)
 
-- Our own collected dataset, [YQ]()
+- Our own collected dataset, [YQ](https://www.aliyundrive.com/s/GqAnikLnb7k)
 
