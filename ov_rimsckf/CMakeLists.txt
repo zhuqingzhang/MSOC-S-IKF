@@ -133,13 +133,6 @@ else()
 endif()
 
 
-#add_executable(test_sim_meas src/test_sim_meas.cpp)
-#target_link_libraries(test_sim_meas ov_rimsckf_lib ${thirdparty_libraries})
 
-#add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-#target_link_libraries(test_sim_repeat ov_rimsckf_lib ${thirdparty_libraries})
-
-#add_executable(test_kf_match src/test_kf_match.cpp)
-#target_link_libraries(test_kf_match ov_rimsckf_lib ${thirdparty_libraries})
 
 

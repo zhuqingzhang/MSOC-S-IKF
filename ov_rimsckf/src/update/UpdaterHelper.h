@@ -132,25 +132,12 @@ namespace ov_rimsckf {
          */
         static void get_feature_jacobian_full(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &x_order);
 
-        static void get_feature_jacobian_kf(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_n_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        
-        static void get_feature_jacobian_kf2(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        //using invariant error for kf pose and map point
-        static bool get_feature_jacobian_kf3(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        //using invariant error for kf pose but std error for map point
-        static bool get_feature_jacobian_kf4(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        //using std error for kf pose and map point
-        static bool get_feature_jacobian_kf5(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        
-        static void get_feature_jacobian_ukf(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        
         //compute jacobian without schimidt
         static void get_feature_jacobian_loc(State *state, UpdaterHelperFeature &feature,
                                              Eigen::MatrixXd &H_x, Eigen::VectorXd &res,
                                              std::vector<Type *> &x_order);
 
         static bool get_feature_jacobian_oc(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-         static bool get_feature_jacobian_oc2(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
         
         
         /**

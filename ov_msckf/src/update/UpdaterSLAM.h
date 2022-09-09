@@ -94,7 +94,7 @@ namespace ov_msckf {
 
         void update_skf(State *state,std::vector<Feature*>& feature_vec);
 
-        bool update_skf_with_KF(State *state,std::vector<Feature*>& feature_vec);
+       
 
 
         /**
@@ -106,7 +106,7 @@ namespace ov_msckf {
 
         void delayed_init_skf(State *state, std::vector<Feature*>& feature_vec);
 
-        bool delayed_init_skf_with_KF(State *state, std::vector<Feature*>& feature_vec);
+        
 
 
         /**

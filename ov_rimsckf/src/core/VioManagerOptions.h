@@ -111,13 +111,13 @@ namespace ov_rimsckf {
 
         bool use_prior_map=false;
 
-        bool multi_match=false;
-
         bool save_match_points=false;
 
         bool save_transform=false;
 
         bool delay=false;
+
+        string used_dataset = "euroc"; // euroc,sim,YQ,kaist,fourseasons
 
 
 

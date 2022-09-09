@@ -156,6 +156,39 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
     // Create our state variables
     Eigen::Matrix<double,4,1> q_GtoI = rot_2_quat(Ro);
 
+
+
+
+
+    // // Get z axis, which alines with -g (z_in_G=0,0,1)
+    // //this is the z_axis in the imu frame
+    // Eigen::Vector3d y_axis = linavg/linavg.norm();
+
+    // // Create an x_axis
+    // Eigen::Vector3d e_1(1,0,0);
+
+    // // Make x_axis perpendicular to z
+    // //as z_axis and e_1 are norm vector, so , z_axis.transpose()*e_1 is the length of e1 project into z_axis
+    // // then it is multiplied by z_axis (which is the direction of z_axis), so that e1, z_axis*z_axis.transpose()*e_1 and
+    // //e1-z_axis*z_axis.transpose()*e_1 compose a right-angled triangle. so x_axis is perpendicular to z. by zzq
+    // Eigen::Vector3d x_axis = e_1-y_axis*y_axis.transpose()*e_1;
+    // x_axis= x_axis/x_axis.norm();
+
+    // // Get y from the cross product of these two
+    // Eigen::Matrix<double,3,1> z_axis = skew_x(y_axis)*x_axis;
+
+    // // From these axes get rotation
+    // //Pose_IMU=R_GtoI*Pose_G.
+    // // we assume the Pose_G is Identity, so Pose_IMU(i.e. Ro) is R_GtoI. by zzq
+    // Eigen::Matrix<double,3,3> Ro;
+    // Ro.block(0,0,3,1) = x_axis;
+    // Ro.block(0,1,3,1) = y_axis;
+    // Ro.block(0,2,3,1) = z_axis;
+
+    // // Create our state variables
+    // Eigen::Matrix<double,4,1> q_GtoI = rot_2_quat(Ro);
+
+
     // Set our biases equal to our noise (subtract our gravity from accelerometer bias)
     Eigen::Matrix<double,3,1> bg = angavg;
     Eigen::Matrix<double,3,1> ba = linavg - quat_2_Rot(q_GtoI)*_gravity;

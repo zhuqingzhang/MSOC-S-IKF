@@ -90,13 +90,13 @@ namespace ov_rimsckf {
             /// Accelerometer random walk covariance
             double sigma_ab_2 = pow(3.0000e-03, 2);
 
-            double sigma_avr = 1e-2;
+            // double sigma_avr = 1e-2;
 
-            double sigma_avr_2 = pow(1e-2,2);
+            // double sigma_avr_2 = pow(1e-2,2);
 
-            double sigma_avp = 1e-1;
+            // double sigma_avp = 1e-1;
 
-            double sigma_avp_2 = pow(1e-1,2);
+            // double sigma_avp_2 = pow(1e-1,2);
 
             double noise_multipler = 1.0;
 
@@ -121,8 +121,8 @@ namespace ov_rimsckf {
             _noises.sigma_a_2 = std::pow(_noises.sigma_a,2);
             _noises.sigma_wb_2 = std::pow(_noises.sigma_wb,2);
             _noises.sigma_ab_2 = std::pow(_noises.sigma_ab,2);
-            _noises.sigma_avr_2 = std::pow(_noises.sigma_avr,2);
-            _noises.sigma_avp_2 = std::pow(_noises.sigma_avp,2);
+            // _noises.sigma_avr_2 = std::pow(_noises.sigma_avr,2);
+            // _noises.sigma_avp_2 = std::pow(_noises.sigma_avp,2);
             last_prop_time_offset = 0.0;
         }
 
@@ -178,7 +178,7 @@ namespace ov_rimsckf {
          */
         void propagate_and_clone(State *state, double timestamp);
 
-        void propagate_and_clone2(State *state, double timestamp);
+      
 
 
         /**
@@ -258,9 +258,7 @@ namespace ov_rimsckf {
         void predict_and_compute(State *state, const IMUDATA data_minus, const IMUDATA data_plus,
                                  Eigen::MatrixXd &F, Eigen::MatrixXd &Qd);
 
-        void predict_and_compute2(State *state, const IMUDATA data_minus, const IMUDATA data_plus,
-                                 Eigen::MatrixXd &F, Eigen::MatrixXd &Qd);
-
+       
 
         /**
          * @brief Discrete imu mean propagation.

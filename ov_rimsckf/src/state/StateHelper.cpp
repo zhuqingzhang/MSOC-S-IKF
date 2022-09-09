@@ -241,214 +241,6 @@ void StateHelper::EKFPropagation(State *state, const std::vector<Type*> &order_N
 }
 
 
-void StateHelper::EKFPropagation2(State *state, const std::vector<Type*> &order_NEW, const std::vector<Type*> &order_OLD,
-                                 const Eigen::MatrixXd &Phi, const Eigen::MatrixXd &Q) {
-
-    // We need at least one old and new variable
-    if (order_NEW.empty() || order_OLD.empty()) {
-        printf(RED "StateHelper::EKFPropagation() - Called with empty variable arrays!\n" RESET);
-        std::exit(EXIT_FAILURE);
-    }
-
-    //Phi is in order of R_ItoG, p_IinG, v_IinG, bg, ba, features_landmarks, 6DOF features
-    //we should collect their covariance from the state->_Cov and compose the covariance in order.
-    
-    std::vector<int> Phi_id; //location of each variable in Phi
-    std::vector<int> _Cov_id; //location of each variable in state->_Cov;
-    std::vector<int> var_size; //the size of each variable
-    int current_id = 0;
-    int size_order_OLD = 0;
-    cout<<"order_OLD size: "<<order_OLD.size()<<endl;
-    for (Type *var:order_OLD)
-    {
-        Phi_id.push_back(current_id);
-        _Cov_id.push_back(var->id());
-        cout<<"var id:"<<var->id()<<endl;
-        var_size.push_back(var->size());
-        cout<<"var size:"<<var->size()<<endl;
-        current_id += var->size();
-        size_order_OLD += var->size();
-        cout<<"size_order_OLD: "<<size_order_OLD<<endl;
-    }
-    cout<<"ekfpropagator:: size_order_OLD: "<< size_order_OLD<<endl;
-    //other variables that are not propagated with IMU
-    std::vector<Type*> order_notprop;
-    std::vector<int> id_notprop;  
-    std::vector<int> var_size_notprop;
-    int notprop_size = 0;
-    if(state->set_transform)
-    {
-        if(order_OLD.size()==1) //only have imu state, it is zupt.
-        {
-            order_notprop.push_back(state->transform_map_to_vio);
-            id_notprop.push_back(notprop_size);
-            var_size_notprop.push_back(state->transform_map_to_vio->size());
-            notprop_size += state->transform_map_to_vio->size();
-        }
-    }
-
-    auto iter = state->_clones_IMU.begin();
-    while(iter!=state->_clones_IMU.end())
-    {
-        order_notprop.push_back(iter->second);
-        id_notprop.push_back(notprop_size);
-        var_size_notprop.push_back(iter->second->size());
-        notprop_size += iter->second->size();
-        iter++;
-    }
-    
-    for (int i = 0; i < state->_options.num_cameras; i++) {
-
-        if(state->_options.do_calib_camera_pose)
-        {
-            order_notprop.push_back(state->_calib_IMUtoCAM[i]);
-            id_notprop.push_back(notprop_size);
-            var_size_notprop.push_back(state->_calib_IMUtoCAM[i]->size());
-            notprop_size += state->_calib_IMUtoCAM[i]->size();
-        }
-        
-        if (state->_options.do_calib_camera_intrinsics) {
-            order_notprop.push_back(state->_cam_intrinsics[i]);
-            id_notprop.push_back(notprop_size);
-            var_size_notprop.push_back(state->_cam_intrinsics[i]->size());
-            notprop_size += state->_cam_intrinsics[i]->size();
-        }
-    }
-
-    //time delay
-    if (state->_options.do_calib_camera_timeoffset) {
-        order_notprop.push_back(state->_calib_dt_CAMtoIMU);
-        id_notprop.push_back(notprop_size);
-        var_size_notprop.push_back(state->_calib_dt_CAMtoIMU->size());
-        notprop_size += state->_calib_dt_CAMtoIMU->size();
-    }
-    
-
-    if(state->zupt)
-    {
-      auto it=state->_features_SLAM.begin();
-      while(it!=state->_features_SLAM.end())
-      {
-        order_notprop.push_back(it->second);
-        id_notprop.push_back(notprop_size);
-        var_size_notprop.push_back(it->second->size());
-        notprop_size += it->second->size();
-        it++;
-      }
-    }
-
-    cout<<"ekfpropagator:: notprop_size: "<< notprop_size<<endl;
-    cout<<"Cov size: "<<state->_Cov.rows()<<endl;
-    
-    
-    assert(Phi.cols()==size_order_OLD);
-    assert(state->_Cov.rows()==(size_order_OLD + notprop_size));
-    cout<<"1"<<endl;
-    //collect covariance from state->_Cov
-    Eigen::MatrixXd Cov = Eigen::MatrixXd::Zero(size_order_OLD,size_order_OLD);
-    for(int i=0; i<_Cov_id.size(); i++)
-    {
-        for(int j=0; j<_Cov_id.size(); j++)
-        {
-            Cov.block(Phi_id[i],Phi_id[j],var_size[i],var_size[j]) = 
-            state->_Cov.block(_Cov_id[i],_Cov_id[j],var_size[i],var_size[j]);
-        }
-    }
-    cout<<"2"<<endl;
-    // cout<<"collected Cov: "<<endl<<Cov<<endl;
-    // cout<<"original Cov: "<<endl<<state->_Cov.block(0,0,state->_imu->size(),state->_imu->size())<<endl;
-    //collect cross_covariance from state->_Cov
-    Eigen::MatrixXd Cross_Cov = Eigen::MatrixXd::Zero(size_order_OLD,notprop_size);
-    for(int i=0; i<_Cov_id.size(); i++)
-    {
-        for(int j=0; j<order_notprop.size(); j++)
-        {
-            Cross_Cov.block(Phi_id[i],id_notprop[j],var_size[i],var_size_notprop[j]) = 
-            state->_Cov.block(_Cov_id[i],order_notprop[j]->id(),var_size[i],var_size_notprop[j]);
-        }
-    }
-    cout<<"3"<<endl;
-    // cout<<"collected Cross_Cov: "<<endl<<Cross_Cov<<endl;
-    // cout<<"original Cross_cov: "<<endl<<state->_Cov.block(0,state->_imu->size(),size_order_OLD,notprop_size)<<endl;
-
-
-    //propagate the covariance
-    Eigen::MatrixXd Cov_new = Phi*Cov*Phi.transpose() + Q;
-    Eigen::MatrixXd Cross_Cov_new = Phi*Cross_Cov;
-    cout<<"4"<<endl;
-    //reassgin the Cov_new to state->_Cov
-    for(int i=0; i<_Cov_id.size(); i++)
-    {
-        for(int j=0; j<_Cov_id.size();j++)
-        {
-            state->_Cov.block(_Cov_id[i],_Cov_id[j],var_size[i],var_size[j]) =
-            Cov_new.block(Phi_id[i],Phi_id[j],var_size[i],var_size[j]);
-        }
-        
-        for(int k=0; k<order_notprop.size(); k++)
-        {
-            state->_Cov.block(_Cov_id[i],order_notprop[k]->id(),var_size[i],var_size_notprop[k]) =
-            Cross_Cov_new.block(Phi_id[i],id_notprop[k],var_size[i],var_size_notprop[k]);
-
-            state->_Cov.block(order_notprop[k]->id(),_Cov_id[i],var_size_notprop[k],var_size[i]) =
-            Cross_Cov_new.block(Phi_id[i],id_notprop[k],var_size[i],var_size_notprop[k]).transpose();
-        }
-    }
-    cout<<"5"<<endl;
-    // cout<<"updated Cov_new: "<<endl<<Cov_new<<endl;
-    // cout<<"updated original Cov: "<<endl<<state->_Cov.block(0,0,state->_imu->size(),state->_imu->size())<<endl;
-    // cout<<"updated Cross_Cov_new: "<<endl<<Cross_Cov_new<<endl;
-    // cout<<"updated original Cross_Cov: "<<endl<<state->_Cov.block(0,state->_imu->size(),size_order_OLD,notprop_size)<<endl;
-
-    //check negative
-    Eigen::VectorXd diags = state->_Cov.diagonal();
-    cout<<"6"<<endl;
-    bool found_neg = false;
-    for(int i=0; i<diags.rows(); i++) {
-        if(diags(i) < 0.0) {
-            printf(RED "StateHelper::EKFPropagation() - diagonal at %d is %.2f\n" RESET,i,diags(i));
-            found_neg = true;
-        }
-    }
-    assert(!found_neg);
-    
-
-    //if we have nuisance part, we should propagte the nuisance covariance
-    //Phi_CovAN =[Phi] [P_AN]
-    if(state->_options.use_schmidt)
-    {
-        Eigen::MatrixXd Phi_CovAN = Eigen::MatrixXd::Zero(Phi.rows(),state->_Cov_nuisance.cols());
-        if(state->_nuisance_variables.size()>0)
-        {
-            for(int i=0; i<_Cov_id.size(); i++)
-            {
-                Phi_CovAN.noalias() += Phi.block(0,Phi_id[i],Phi.rows(),var_size[i]) * 
-                                    state->_Cross_Cov_AN.block(_Cov_id[i],0,var_size[i],state->_Cov_nuisance.cols());
-            }
-            //Update state->_Cross_Cov_AN
-            for(int i=0; i<_Cov_id.size(); i++)
-            {
-                state->_Cross_Cov_AN.block(_Cov_id[i],0,var_size[i],state->_Cov_nuisance.cols()) = 
-                Phi_CovAN.block(Phi_id[i],0,var_size[i],Phi_CovAN.cols());
-            }
-        }
-    }
-    
-
-
-    // // We are good to go!
-    // int start_id = order_NEW.at(0)->id();
-    // int phi_size = Phi.rows();
-    // int total_size = state->_Cov.rows();
-    // state->_Cov.block(start_id,0,phi_size,total_size) = Cov_PhiT.transpose();
-    // state->_Cov.block(0,start_id,total_size,phi_size) = Cov_PhiT;
-    // state->_Cov.block(start_id,start_id,phi_size,phi_size) = Phi_Cov_PhiT;
-
-  
-
-}
-
-
 
 void StateHelper::EKFUpdate(State *state, const std::vector<Type *> &H_order, const Eigen::MatrixXd &H,
                             const Eigen::VectorXd &res, const Eigen::MatrixXd &R) {
@@ -707,45 +499,7 @@ void StateHelper::UpdateVarInvariant(State *state, const Eigen::VectorXd dx)
   
 }
 
-/*
-void StateHelper::UpdateVarInvariant(State *state, const Eigen::VectorXd dx)
-{
-    //we divid all variables into  parts
-    //first is the SE_{2+N}^{1}(3), where 2 indicate p_IinG v_IinG; 
-    //  N indicate N landmark features; 
-    //  1 indicate 1 6DOF features, i.e transformation between Local{G} and Global{map} reference
-    //second is the SE(3), corresponding to clone poses and extrinsics
-    //third is normal vector, corresponding to other parameters like bg, ba, intrinsics, dt
-    
-    Eigen::MatrixXd X_SEN = ConstructSEN(state);  //construct SE_{2+N}^{1}(3)
-    Eigen::VectorXd dx_SEN = Construct_dxSEN(state, dx); //select dx_SEN from dx 
-    cout<<"***dx norm: "<<dx_SEN.norm()<<"***************"<<endl;
-    Eigen::MatrixXd dX_SEN;
-    if(state->set_transform) //if we have 6dof feature, construct Lie group SE_{2+N}^{1}(3)
-    {
-        dX_SEN = exp_senm3(dx_SEN.block(0,0,dx_SEN.rows()-3,1),dx_SEN.tail(3));
-    }
-    else //else. construct Lie group SE_{2+N}(3)
-    {
-        dX_SEN = exp_sen3(dx_SEN);
-    }
-    assert(X_SEN.rows()==X_SEN.cols());
-    assert(X_SEN.rows()==dX_SEN.rows());
-    assert(dX_SEN.rows()==dX_SEN.cols());
 
-    //update state
-    X_SEN = dX_SEN * X_SEN;
-    SeparateSEN(state, X_SEN);
-
-    UpdateClonePose(state, dx);
-
-    UpdateParameters(state, dx);
-
-    cout<<"Now we finish the state->variables update"<<endl;
-        cout<<"imu state: "<<state->_imu->pos().transpose()<<" imu clone state: "<<state->_clones_IMU[state->_timestamp]->pos().transpose()<<endl;
-    assert((state->_imu->pos()-state->_clones_IMU[state->_timestamp]->pos()).norm()<1e-5);
-}
-*/
 Eigen::MatrixXd StateHelper::ConstructSEN(State *state)
 {
     /* R p v f1...fN p_trans  0
@@ -1047,7 +801,7 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
 
     }
     assert(skip_trans);
-    cout<<"2"<<endl;
+
 
     //4: Pnn*Hn^T
     for(Type *var: state->_nuisance_variables){
@@ -1057,40 +811,24 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
             Type *meas_n_var=Hn_order[i];
             M_i.noalias()+=state->_Cov_nuisance.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
                            H_nuisance.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // if(state->iter)
-            // {
-            //     M_i_last.noalias() += state->_Cov_nuisance.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
-            //                Hn_last.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // }
+
         }
         M_n.block(var->id(),0,var->size(),res.rows()).noalias() += M_i;
-        // if(state->iter)
-        // {
-        //      M_a_last.block(active_size+var->id(), 0, var->size(), res.rows()).noalias() += M_i_last;
-        // }
+
     }
-    cout<<"2.5"<<endl;
+
     Eigen::VectorXd error_a = M_a * S_inv * res;
-    cout<<"error_a: "<<error_a.transpose()<<endl;
+
     Eigen::VectorXd error_t = tmp * Ht.transpose()*Ainv *res;
-    // error_t = Eigen::VectorXd::Zero(6);
-    cout<<"error_t: "<<error_t.transpose()<<endl;
-    // cout<<"tmp * Ht.transpoe(): "<<endl<<tmp * Ht.transpose()<<endl;
-    // cout<<"tmp * Ht.transpoe()*Ainv: "<<endl<<tmp * Ht.transpose()*Ainv<<endl;
-    cout<<"tmp: "<<tmp<<endl;
-    // cout<<"Ht: "<<Ht<<endl;
-    cout<<"Ainv: "<<Ainv<<endl;
-    cout<<"res: "<<res<<endl;
-    cout<<"3"<<endl;
+
     Eigen::VectorXd error = Eigen::VectorXd::Zero(state->_Cov.rows());
-    cout<<"4"<<endl;
+
     assert(error.rows() == error_a.rows()+error_t.rows());
     int trans_id = state->transform_map_to_vio->id();
     error.block(0,0,trans_id,1) = error_a.block(0,0,trans_id,1);
     error.block(trans_id,0,trans_size,1) = error_t;
     error.block(trans_id+trans_size,0,error_a.rows()-trans_id,1) = error_a.block(trans_id,0,error_a.rows()-trans_id,1);
-    cout<<"error: "<<error.transpose()<<endl;
-    cout<<"5"<<endl;
+
     vector<Type*> Ha_order_big;
     for(Type *var: state->_variables)
     {
@@ -1100,39 +838,36 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
       }
       Ha_order_big.push_back(var);
     }
-    cout<<"6"<<endl;
+
     Eigen::MatrixXd P_AA = StateHelper::get_marginal_covariance(state,Ha_order_big);
-    cout<<"6.1"<<endl;
+
     Eigen::MatrixXd P_AA_new = P_AA - M_a * S_inv * M_a.transpose();
-    cout<<"6.2"<<endl;
+
     Eigen::MatrixXd P_AT_new = -M_a * Ainv * Ht * tmp;
-    cout<<"6.3"<<endl;
+
     Eigen::MatrixXd P_TT_new = tmp;
-    cout<<"6.4"<<endl;
+
     Eigen::MatrixXd P_AN_new = -M_a * S_inv * M_n.transpose();
-    cout<<"6.5"<<endl;
+
     Eigen::MatrixXd P_TN_new = -tmp * Ht.transpose() * Ainv * M_n.transpose();
-    cout<<"7"<<endl;
+
     //* relative transformation should be the last variable in the state by now;
     assert(state->_Cov.rows()-state->transform_map_to_vio->size() == state->transform_map_to_vio->id());
     assert(active_size == state->transform_map_to_vio->id());
     assert(P_AA.rows() == active_size);
     //*update cov
-    cout<<"7.1"<<endl;
+
     state->_Cov.block(0,0,P_AA.rows(),P_AA.cols()) = P_AA_new;
-    cout<<"7.2"<<endl;
+
     state->_Cov.block(active_size,active_size,trans_size,trans_size) = P_TT_new;
-    cout<<"7.3"<<endl;
+
     state->_Cov.block(0,active_size,active_size,trans_size) = P_AT_new;
-    cout<<"7.4"<<endl;
+
     state->_Cov.block(active_size,0,trans_size,active_size) = P_AT_new.transpose();
-    cout<<"7.5"<<endl;
+
     state->_Cross_Cov_AN.block(0,0,active_size,nuisance_size) = P_AN_new;
-    cout<<"7.6"<<endl;
-    cout<<"nuisance size: "<<nuisance_size<<" trans_size: "<<trans_size<<" P_TN_new size: "<<P_TN_new.rows()<<" "<<P_TN_new.cols()<<endl;
-    cout<<"Cov size: "<<state->_Cov.rows()<<" Cov_AN size: "<<state->_Cross_Cov_AN.rows()<<" "<<state->_Cross_Cov_AN.cols()<<endl;
+   
     state->_Cross_Cov_AN.block(active_size,0,trans_size,nuisance_size) = P_TN_new;
-    cout<<"8"<<endl;
 
     Eigen::VectorXd diags = state->_Cov.diagonal();
       bool found_neg = false;
@@ -1149,14 +884,9 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
     //==========================================================
     //==========================================================
 
-    
    
     UpdateVarInvariant(state, error);
-    cout<<"9"<<endl;
-    // sleep(100);
-        // cout<<"imu state position: "<<state->_imu->pos().transpose()<<" imu clone state postion: "<<state->_clones_IMU[state->_timestamp]->pos().transpose()<<endl;
-        // cout<<"imu state orientation: "<<state->_imu->quat().transpose()<<" imu clone state orientation: "<<state->_clones_IMU[state->_timestamp]->quat().transpose()<<endl;
-        // cout<<"state timestamp: "<<to_string(state->_timestamp)<<" imu orientation: "<<state->_imu->quat().transpose()<<" imu position: "<<state->_imu->pos().transpose()<<endl;
+
         
 }
     

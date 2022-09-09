@@ -40,36 +40,7 @@ Keyframe::Keyframe(double _time_stamp, int _index, std::size_t camid, cv::Mat &i
 
 }
 
-// create Keyframe online（without descriptor at first)
-//先对已有的2d点point_2d_uv提取描述子，然后再在图片上提取新的fast特征点keypoint并计算keypoint的描述子
-//Keyframe::Keyframe(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, cv::Mat &_image,
-//                   vector<cv::Point3f> &_point_3d, vector<cv::Point2f> &_point_2d_uv, vector<cv::Point2f> &_point_2d_norm,
-//                   vector<size_t> &_point_id, int _sequence)
-//{
-//    time_stamp = _time_stamp;
-//    index = _index;
-//    vio_T_w_i = _vio_T_w_i;
-//    vio_R_w_i = _vio_R_w_i;
-//    T_w_i = vio_T_w_i;
-//    R_w_i = vio_R_w_i;
-//    origin_vio_T = vio_T_w_i;
-//    origin_vio_R = vio_R_w_i;
-//    image = _image.clone();
-//    cv::resize(image, thumbnail, cv::Size(80, 60));
-//    point_3d = _point_3d;
-//    point_2d_uv = _point_2d_uv;
-//    point_2d_norm = _point_2d_norm;
-//    point_id = _point_id;
-//    has_loop = false;
-//    loop_index = -1;
-//    has_fast_point = false;
-//    loop_info << 0, 0, 0, 0, 0, 0, 0, 0;
-//    sequence = _sequence;
-//    computeWindowBRIEFPoint();
-//   // computeBRIEFPoint();
-////    if(!DEBUG_IMAGE)
-////        image.release();
-//}
+
 
 // load previous Keyframe
 Keyframe::Keyframe(double _time_stamp, int _index, Eigen::Matrix<double,7,1> &pos1, Eigen::Matrix<double,7,1> &pos2,
@@ -116,45 +87,6 @@ Keyframe::Keyframe(double _time_stamp, int _index, Eigen::Matrix<double,7,1> &po
 }
 
 
-//void Keyframe::computeWindowBRIEFPoint()
-//{
-//    BriefExtractor extractor(BRIEF_PATTERN_FILE.c_str());
-//    for(int i = 0; i < (int)point_2d_uv.size(); i++)
-//    {
-//        cv::KeyPoint key;
-//        key.pt = point_2d_uv[i];
-//        window_keypoints.push_back(key);
-//    }
-//    extractor(image, window_keypoints, window_brief_descriptors);
-//}
-
-//void Keyframe::computeBRIEFPoint()
-//{
-//    BriefExtractor extractor(BRIEF_PATTERN_FILE.c_str());
-//    const int fast_th = 20; // corner detector response threshold
-//    if(1)
-//        cv::FAST(image, keypoints, fast_th, true);
-//    else
-//    {
-//        vector<cv::Point2f> tmp_pts;
-//        cv::goodFeaturesToTrack(image, tmp_pts, 500, 0.01, 10);
-//        for(int i = 0; i < (int)tmp_pts.size(); i++)
-//        {
-//            cv::KeyPoint key;
-//            key.pt = tmp_pts[i];
-//            keypoints.push_back(key);
-//        }
-//    }
-//    extractor(image, keypoints, brief_descriptors);
-//    for (int i = 0; i < (int)keypoints.size(); i++)
-//    {
-//        Eigen::Vector3d tmp_p;
-//        m_camera->liftProjective(Eigen::Vector2d(keypoints[i].pt.x, keypoints[i].pt.y), tmp_p);
-//        cv::KeyPoint tmp_norm;
-//        tmp_norm.pt = cv::Point2f(tmp_p.x()/tmp_p.z(), tmp_p.y()/tmp_p.z());
-//        keypoints_norm.push_back(tmp_norm);
-//    }
-//}
 
 void KF_BriefExtractor::operator() (const cv::Mat &im, vector<cv::KeyPoint> &keys, vector<BRIEF::bitset> &descriptors) const
 {
@@ -382,26 +314,7 @@ bool Keyframe::PnPRANSAC(const vector<cv::Point2f> &matched_2d_cur,
         return false;
     }
     
-    // if(flag)
-    // {
-    //     flag=solvePnP(matched_3d_kf,matched_2d_cur,K,D,rvec,t,cv::SOLVEPNP_ITERATIVE);
-    //     cout<<"t: "<<t<<endl;
-    //     // sleep(5);
-    // }
-    
-    
-
-
-
-//    for (int i = 0; i < (int)matched_2d_old_norm.size(); i++)
-//        status.push_back(0);
-//
-//    for( int i = 0; i < inliers.rows; i++)
-//    {
-//        int n = inliers.at<int>(i);
-//        status[n] = 1;
-//    }
-VectorXd cam_d=_intrinsics;
+    VectorXd cam_d=_intrinsics;
     if(flag)
     {
       cv::Rodrigues(rvec, r);
@@ -409,40 +322,6 @@ VectorXd cam_d=_intrinsics;
       cv::cv2eigen(r, PnP_R_loopTocur);
       cv::cv2eigen(t, PnP_p_loopIncur);
       cout<<"PnP_p_loopIncur: "<<PnP_p_loopIncur<<endl;
-    //   for(int i=0;i<matched_3d_kf.size();i++)
-    //   {
-    //       Vector3d kf_3d(double(matched_3d_kf[i].x),double(matched_3d_kf[i].y),double(matched_3d_kf[i].z));
-    //       Vector2d cur_2d(double(matched_2d_cur[i].x),double(matched_2d_cur[i].y));
-    //       Vector3d cur_3d= PnP_R_loopTocur*kf_3d+PnP_p_loopIncur;
-    //       Vector2d uv_norm=Vector2d::Zero();
-    //       uv_norm<<cur_3d[0]/cur_3d[2],cur_3d[1]/cur_3d[2];
-    //       Vector2d uv_dist=Vector2d::Zero();
-    //       double r = std::sqrt(uv_norm(0)*uv_norm(0)+uv_norm(1)*uv_norm(1));
-    //       double r_2 = r*r;
-    //       double r_4 = r_2*r_2;
-    //       double x1 = uv_norm(0)*(1+cam_d(4)*r_2+cam_d(5)*r_4)+2*cam_d(6)*uv_norm(0)*uv_norm(1)+cam_d(7)*(r_2+2*uv_norm(0)*uv_norm(0));
-    //       double y1 = uv_norm(1)*(1+cam_d(4)*r_2+cam_d(5)*r_4)+cam_d(6)*(r_2+2*uv_norm(1)*uv_norm(1))+2*cam_d(7)*uv_norm(0)*uv_norm(1);
-    //       uv_dist(0) = cam_d(0)*x1 + cam_d(2);
-    //       uv_dist(1) = cam_d(1)*y1 + cam_d(3);
-
-    //       uv_norm=Vector2d::Zero();
-    //       uv_norm<<kf_3d[0]/kf_3d[2],kf_3d[1]/kf_3d[2];
-
-    //       Vector2d uv_dist_kf=Vector2d::Zero();
-    //       r = std::sqrt(uv_norm(0)*uv_norm(0)+uv_norm(1)*uv_norm(1));
-    //       r_2 = r*r;
-    //       r_4 = r_2*r_2;
-    //       x1 = uv_norm(0)*(1+cam_d(4)*r_2+cam_d(5)*r_4)+2*cam_d(6)*uv_norm(0)*uv_norm(1)+cam_d(7)*(r_2+2*uv_norm(0)*uv_norm(0));
-    //       y1 = uv_norm(1)*(1+cam_d(4)*r_2+cam_d(5)*r_4)+cam_d(6)*(r_2+2*uv_norm(1)*uv_norm(1))+2*cam_d(7)*uv_norm(0)*uv_norm(1);
-    //       uv_dist_kf(0) = cam_d(0)*x1 + cam_d(2);
-    //       uv_dist_kf(1) = cam_d(1)*y1 + cam_d(3);
-
-
-          
-          
-          
-    //       cout<<"3d kf: "<<matched_3d_kf[i]<<"2d project kf: "<<uv_dist_kf.transpose()<<" 2d cur:"<<matched_2d_cur[i]<<" project: "<<uv_dist.transpose()<<endl;
-    //   }
       return true;
     }
     else

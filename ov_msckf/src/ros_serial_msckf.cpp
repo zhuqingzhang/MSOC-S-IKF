@@ -55,13 +55,13 @@ int main(int argc, char** argv)
     sys = new VioManager(params);
     viz = new RosVisualizer(nh, sys);
 
-    //load posegraph
+    //load ,matching info
     if(params.use_prior_map)
    {
-       sys->loadPoseGraph2(params.map_save_path,params.pose_graph_filename,params.keyframe_pose_filename);
+       sys->loadMatchingInfo(params.map_save_path,params.pose_graph_filename,params.keyframe_pose_filename);
 
    }
-   cout<<"finish load Posegraph "<<endl;
+
 
 
     //===================================================================================

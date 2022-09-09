@@ -64,7 +64,7 @@ namespace ov_rimsckf {
         params.match_base_options.map_file = params.map_save_path + "/" + params.match_base_options.map_file;
         //match map parameters offline
         nh.param<bool>("use_prior_map",params.use_prior_map,params.use_prior_map);
-        nh.param<bool>("multi_match",params.multi_match,params.multi_match);
+        nh.param<string>("used_dataset",params.used_dataset,params.used_dataset);
         nh.param<bool>("ptmeas",params.state_options.ptmeas,params.state_options.ptmeas);
         nh.param<bool>("use_schmidt",params.state_options.use_schmidt,params.state_options.use_schmidt);
         nh.param<bool>("trans_fej",params.state_options.trans_fej,params.state_options.trans_fej);
@@ -162,8 +162,6 @@ namespace ov_rimsckf {
         nh.param<double>("gyroscope_random_walk", params.imu_noises.sigma_wb, params.imu_noises.sigma_wb);
         nh.param<double>("accelerometer_random_walk", params.imu_noises.sigma_ab, params.imu_noises.sigma_ab);
         nh.param<double>("noise_multipler",params.imu_noises.noise_multipler,params.imu_noises.noise_multipler);
-        nh.param<double>("augmented_variable_R_noise_density", params.imu_noises.sigma_avr, params.imu_noises.sigma_avr);
-        nh.param<double>("augmented_variable_p_noise_density", params.imu_noises.sigma_avp, params.imu_noises.sigma_avp);
         params.imu_noises.sigma_w *=  params.imu_noises.noise_multipler;
         params.imu_noises.sigma_a *=  params.imu_noises.noise_multipler;
         params.imu_noises.sigma_wb *=  params.imu_noises.noise_multipler;

@@ -233,16 +233,6 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
     Eigen::MatrixXd M_a_last = Eigen::MatrixXd::Zero(active_size+nuisance_size, res.rows());
     Eigen::MatrixXd Hx_last;
     Eigen::MatrixXd Hn_last;
-    // if(state->iter==true)
-    // {
-    //     Hx_last=state->Hx_last;
-    //     Hn_last=state->Hn_last;
-    //     assert(Hx_last.rows()==res.rows());
-    //     assert(Hx_last.rows()==Hn_last.rows());
-    //     assert(Hx_last.cols()==Hx.cols());
-    //     assert(Hn_last.cols()==H_nuisance.cols());
-
-    // }
 
 
 
@@ -284,18 +274,11 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             Type *meas_var = Hx_order[i];
             M_i.noalias() += state->_Cov.block(var->id(), meas_var->id(), var->size(), meas_var->size()) *
                              Hx.block(0, Hx_id[i], Hx.rows(), meas_var->size()).transpose();
-            // if(state->iter)
-            // {
-            //     M_i_last.noalias() += state->_Cov.block(var->id(), meas_var->id(), var->size(), meas_var->size()) *
-            //                  Hx_last.block(0, Hx_id[i], Hx.rows(), meas_var->size()).transpose();
-            // }
+
             
         }
         M_a.block(var->id(), 0, var->size(), res.rows()).noalias() += M_i;
-        // if(state->iter)
-        // {
-        //      M_a_last.block(var->id(), 0, var->size(), res.rows()).noalias() += M_i_last;
-        // }
+
     }
     //2: Pxn*Hn^T
     cout<<"2"<<endl;
@@ -306,17 +289,10 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             Type *meas_n_var = Hn_order[i];
             M_i.noalias()+=state->_Cross_Cov_AN.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
                            H_nuisance.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // if(state->iter)
-            // {
-            //     M_i_last.noalias() += state->_Cross_Cov_AN.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
-            //                Hn_last.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // }
+
         }
         M_a.block(var->id(),0,var->size(),res.rows()).noalias() += M_i;
-        // if(state->iter)
-        // {
-        //      M_a_last.block(var->id(), 0, var->size(), res.rows()).noalias() += M_i_last;
-        // }
+
     }
     cout<<"Now we finish the L_active"<<endl;
     //Now we finish the L_active.
@@ -329,17 +305,10 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             Type *meas_var = Hx_order[i];
             M_i.noalias()+=state->_Cross_Cov_AN.block(meas_var->id(),var->id(),meas_var->size(),var->size()).transpose()*
                     Hx.block(0,Hx_id[i],Hx.rows(),meas_var->size()).transpose();
-            // if(state->iter)
-            // {
-            //     M_i_last.noalias() += state->_Cross_Cov_AN.block(meas_var->id(),var->id(),meas_var->size(),var->size()).transpose()*
-            //         Hx_last.block(0,Hx_id[i],Hx.rows(),meas_var->size()).transpose();
-            // }
+
         }
         M_a.block(active_size+var->id(),0,var->size(),res.rows()).noalias() += M_i;
-        // if(state->iter)
-        // {
-        //      M_a_last.block(active_size+var->id(), 0, var->size(), res.rows()).noalias() += M_i_last;
-        // }
+
     }
 
     //4: Pnn*Hn^T
@@ -350,17 +319,10 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             Type *meas_n_var=Hn_order[i];
             M_i.noalias()+=state->_Cov_nuisance.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
                            H_nuisance.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // if(state->iter)
-            // {
-            //     M_i_last.noalias() += state->_Cov_nuisance.block(var->id(),meas_n_var->id(),var->size(),meas_n_var->size()) *
-            //                Hn_last.block(0,Hn_id[i],H_nuisance.rows(),meas_n_var->size()).transpose();
-            // }
+
         }
         M_a.block(active_size+var->id(),0,var->size(),res.rows()).noalias() += M_i;
-        // if(state->iter)
-        // {
-        //      M_a_last.block(active_size+var->id(), 0, var->size(), res.rows()).noalias() += M_i_last;
-        // }
+
     }
     cout<<"Now we finish the L_nuisance"<<endl;
     //Now we finish the L_nuisance.
@@ -373,26 +335,7 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
     Eigen::MatrixXd Pxx_small = StateHelper::get_marginal_covariance(state, Hx_order);
     Eigen::MatrixXd Pxn_small = StateHelper::get_marginal_cross_covariance(state,Hx_order,Hn_order);
     Eigen::MatrixXd Pnn_small = StateHelper::get_marginal_nuisance_covariance(state,Hn_order);
-    // if(H_nuisance.cols()>0)
-    // { 
-    //     cout<<"Pxx_small max: "<<Pxx_small.maxCoeff()<<" Pxn_small max: "<<Pxn_small.maxCoeff()<<" Pnn_small max: "<<Pnn_small.maxCoeff()<<endl;
-    //     cout<<"Hx max: "<<Hx.maxCoeff()<<" Hn max: "<<H_nuisance.maxCoeff()<<endl;
-    // }
-    // else
-    // {
     
-    //     cout<<"Pxx_small max: "<<Pxx_small.maxCoeff()<<endl;
-    //     cout<<"Hx max: "<<Hx.maxCoeff()<<endl;
-    // }
-    
-        
-    // cout<<"Pxx_small size:"<<Pxx_small.rows()<<"*"<<Pxx_small.cols()<<endl;
-    // cout<<"Pxn_small size:"<<Pxn_small.rows()<<"*"<<Pxn_small.cols()<<endl;
-    // cout<<"Pnn_small size:"<<Pnn_small.rows()<<"*"<<Pnn_small.cols()<<endl;
-    // cout<<"Hx size:"<<Hx.rows()<<"*"<<Hx.cols()<<endl;
-    // cout<<"Hn size:"<<H_nuisance.rows()<<"*"<<H_nuisance.cols()<<endl;
-    // double h=state->_options.opt_thred*res.rows();
-    // double h=1000;
 
     
     // Residual covariance S = H*Cov*H' + R
@@ -408,85 +351,13 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
     S += (Hx * Pxn_small * H_nuisance.transpose()).transpose();
     cout<<"3"<<endl;
     S += H_nuisance * Pnn_small * H_nuisance.transpose();
-    // if(state->iter_count==0)
-    // {
-    //     state->count++;
-    //     double a =(1-state->b)/(1-pow(state->b,state->count));
-    //     state->sigma.conservativeResizeLike(MatrixXd::Zero(res.rows(),res.rows()));
-    //     state->sigma=a*res*res.transpose()+(1-a)*state->sigma;
-    //     double chi2_check_1;
-    //     double lamda=res.transpose()*state->sigma.inverse()*res;
-    //         boost::math::chi_squared chi_squared_dist(res.rows());
-    //         chi2_check_1 = boost::math::quantile(chi_squared_dist, 0.95);
-    //         printf(GREEN "chi2_check over the residual limit - %d\n" RESET, (int)res.rows());
-        
-    //     if(lamda>chi2_check_1)
-    //     {
-    //         R=state->sigma-S;
-    //     }
+    
             
-    // }
+
     cout<<"4"<<endl;
     S += R;
     cout<<"Now we finish the S"<<endl;
-    // if(state->iter)
-    // {
-    //     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> es(A*A.transpose());
-    //     state->V=sqrt(es.eigenvalues().maxCoeff());
-    //    cout<<"state->noise: "<<state->V<<endl;
-    //    sleep(1);
-    // }
-        
-    // cout<<"state->noise: "<<state->V<<endl;
-    // sleep(1);
-//    if(state->iter)
-//    {
-//     S_last = Hx_last * Pxx_small * Hx_last.transpose();
-//     cout<<"1"<<endl;
-//     S_last += Hx_last * Pxn_small * Hn_last.transpose();
-//     cout<<"2"<<endl;
-//     S_last += (Hx_last * Pxn_small * Hn_last.transpose()).transpose();
-//     cout<<"3"<<endl;
-//     S_last += Hn_last * Pnn_small * Hn_last.transpose();
-
-//     MatrixXd S_new = S - R;
-//     VectorXd S_new_d=S_new.diagonal();
-//     VectorXd S_last_d= S_last.diagonal();
-//     MatrixXd Coff=MatrixXd::Identity(S_last.rows(),S_last.cols());
-//     // cout<<"S_new_d: "<<S_new_d<<endl<<"S_last_d: "<<S_last_d<<endl;
-//     for(int i=0;i<S.rows();i++)
-//     {
-//         double x=S_last_d(i);
-//         double y=S_new_d(i);
-//         assert(x>=0&&y>=0);
-//         if(x==0||y==0)
-//         {
-//             Coff(i,i)=1;
-//         }
-//         else
-//         {
-//             Coff(i,i)=sqrt(y/x);    
-//         }    
-//     }
-//     // cout<<"Coff: "<<endl<<Coff<<endl;
-//     MatrixXd S_new_compute= Coff*S_last*Coff.transpose();
-//     double x=S_new.determinant();
-//     double y=S_new_compute.determinant();
-//     // cout<<"S_new_compute : "<<endl<<S_new_compute<<endl<<"S_new: "<<endl<<S_new<<endl;
-//     // A=S;
-//     cout<<"4"<<endl;
-//     // cout<<"Coff.determainat(): "<<Coff.determinant()<<endl;
-//     // sleep(1);
-//     S_last +=Coff*R*Coff.transpose();
-
-    
-//    }
    
-   
-    //Eigen::MatrixXd S = H * P_small * H.transpose() + R;
-    // A+=res*res.transpose();
-    // A=(h*R+A)/(h+1);
-    // S +=A;
 
     // Invert our S (should we use a more stable method here??)
     Eigen::MatrixXd Sinv = Eigen::MatrixXd::Identity(R.rows(), R.rows());
@@ -511,37 +382,7 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
 
     Eigen::MatrixXd K_active=L_active * Sinv.selfadjointView<Eigen::Upper>();
     cout<<"K_active"<<endl;
-    // Eigen::MatrixXd L_active_last, L_nuisance_last, K_active_last;
-    // if(state->iter)
-    // {
-    //      Eigen::MatrixXd Sinv_last = Eigen::MatrixXd::Identity(R.rows(), R.rows());
-    //      S_last.selfadjointView<Eigen::Upper>().llt().solveInPlace(Sinv_last);
-
-    //      L_active_last=M_a_last.block(0,0,active_size,M_a_last.cols());
-    //      L_nuisance_last=M_a_last.block(active_size,0,nuisance_size,M_a_last.cols());
-    //      K_active_last=L_active_last * Sinv_last.selfadjointView<Eigen::Upper>();
-
-    // }
-
-
-    //Eigen::MatrixXd K = M_a * Sinv.selfadjointView<Eigen::Upper>();
-//    Eigen::MatrixXd KHP=Eigen::MatrixXd::Zero(state->_Cov.rows(),state->_Cov.cols());
-//    KHP.block(0,0,active_size,active_size)=K_active*L_active.transpose();
-//    KHP.block(0,active_size,active_size,nuisance_size)=K_active*L_nuisance.transpose();
-//    KHP.block(active_size,0,nuisance_size,active_size)=KHP.block(0,active_size,active_size,nuisance_size).transpose();
    
-    // {
-    //     Eigen::VectorXd diags = state->_Cov.diagonal();
-    //     Eigen::VectorXd diags_L=(L_active*L_active.transpose()).diagonal();
-    //     cout<<"diags_L.max: "<<diags_L.maxCoeff()<<endl;
-    // bool found_neg = false;
-    // for(int i=0; i<diags.rows(); i++) {
-    //     if(diags(i)-diags_L(i) < 0.0) {
-    //         printf(RED "StateHelper::EKFUpdate() diags-diags_L - diagonal at %d is %.2f\n" RESET,i,diags(i));
-    //         found_neg = true;
-    //     }
-    // }
-    // }
 
     if(!iterative)
     {
@@ -661,25 +502,7 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
         Eigen::VectorXd dx = a*K_active * (res-Hx*error);
         int state_id=state->_clones_IMU.at(state->_timestamp)->id();
         double norm=dx.block(state_id,0,6,1).norm();
-        cout<<"dx norm: "<<norm<<endl;
-        // if(norm>5)
-        // {
-        //     if(state->iter_count>0)
-        //     {
-        //         for(int i=0;i<state->_variables.size();i++)
-        //         {
-        //         state->_variables.at(i)->set_value(state->_variables_last[i]);
-        //         state->_variables.at(i)->set_linp(state->_variables_last[i]);
-        //         }
-        //         state->_Cov=state->_Cov_last;
-        //         state->_Cross_Cov_AN=state->_Cross_Cov_AN_last;
-        //     }
-        //     // state->iter_count=state->_options.iter_num-1;
-        //     state->iter=false;
-        //     return;
-        // }
-        // sleep(1);
-        cout<<"state->iter_count: "<<state->iter_count<<endl;
+
         if(state->iter_count<state->_options.iter_num-1)
         {
             MatrixXd e= MatrixXd::Zero(active_size,1);
@@ -690,79 +513,21 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             // cout<<"last_linp: "<<last_linp.transpose()<<endl;
             state->_variables_last.push_back(last_linp);
             state->_variables.at(i)->update_linp(dx.block(state->_variables.at(i)->id(), 0, state->_variables.at(i)->size(), 1));
-            // MatrixXd cur_linp=state->_variables.at(i)->linp();
-            // // cout<<"cur_linp: "<<cur_linp.rows()<<" "<<cur_linp.cols()<<endl;
-            // if(cur_linp.rows()<7)
-            // {   
-            //     // cout<<"in < 7"<<endl;
-            //     e.block(state->_variables.at(i)->id(),0,state->_variables.at(i)->size(),1)=cur_linp-last_linp;
-            // }
-            // if(cur_linp.rows()==7)
-            // {
-            //     // cout<<"in 7"<<endl;
-            //     Vector3d error_q=compute_error(cur_linp.block(0,0,4,1),last_linp.block(0,0,4,1));
-            //     Vector3d error_t=cur_linp.block(4,0,3,1)-last_linp.block(4,0,3,1);
-            //     Matrix<double,6,1> error_q_t=Matrix<double,6,1>::Zero();
-            //     error_q_t<<error_q,error_t;
-            //     e.block(state->_variables.at(i)->id(),0,state->_variables.at(i)->size(),1)=error_q_t;
-            // }
-            // if(cur_linp.rows()==16)
-            // {
-            //     // cout<<"in 16"<<endl;
-            //     Vector3d error_q=compute_error(cur_linp.block(0,0,4,1),last_linp.block(0,0,4,1));
-            //     VectorXd error_t=cur_linp.block(4,0,12,1)-last_linp.block(4,0,12,1);
-            //     Matrix<double,15,1> error_q_t=Matrix<double,15,1>::Zero();
-            //     error_q_t.block(0,0,3,1)=error_q;
-            //     error_q_t.block(3,0,12,1)=error_t;
-            //     e.block(state->_variables.at(i)->id(),0,state->_variables.at(i)->size(),1)=error_q_t;
-            // }
-            }
            
-                
-               
-            //    state->_Cov_last=state->_Cov_iter;
-            //    state->_Cross_Cov_AN_last=state->_Cross_Cov_AN_iter;
-            //    state->_Cov_iter=state->_Cov;
-            //    state->_Cross_Cov_AN_iter=state->_Cross_Cov_AN;
-
-            //     state->_Cov_iter.triangularView<Eigen::Upper>() -=K_active*L_active.transpose();
-            //     cout<<"Cov"<<endl;
-            //     state->_Cov_iter = state->_Cov_iter.selfadjointView<Eigen::Upper>();
-            //     cout<<"Cov"<<endl;
-            //     cout<<"K_active size:"<<K_active.rows()<<"*"<<K_active.cols()<<endl;
-            //     cout<<"L_nuisance size:"<<L_nuisance.rows()<<"*"<<L_nuisance.cols()<<endl;
-            //     cout<<"state->_Cross_Cov_AN size:"<<state->_Cross_Cov_AN.rows()<<"*"<<state->_Cross_Cov_AN.cols()<<endl;
-            //     state->_Cross_Cov_AN_iter -= K_active*L_nuisance.transpose();
-            //     cout<<"Now we finish the Cov and Cross_Cov update"<<endl;
-
-            //     Eigen::VectorXd diags = state->_Cov_iter.diagonal();
-            //     bool found_neg = false;
-            //     for(int i=0; i<diags.rows(); i++) {
-            //         if(diags(i) < 0.0) {
-            //             printf(RED "StateHelper::EKFUpdate() - diagonal at %d is %.2f\n" RESET,i,diags(i));
-            //             found_neg = true;
-            //         }
-            //     }
-            //     assert(!found_neg);
-                
-                state->iter_count++;
-                cout<<"state->iter_count: "<<state->iter_count<<endl;
-            
-            
-            cout<<"imu state: "<<state->_imu->pos_linp().transpose()<<"imu clone state: "<<state->_clones_IMU[state->_timestamp]->pos_linp().transpose()<<endl;
+            }
+ 
+            state->iter_count++;
+           
         }
         else if(state->iter_count==state->_options.iter_num-1)
         {
             
             state->_Cov.triangularView<Eigen::Upper>() -=K_active*L_active.transpose();
-            cout<<"Cov"<<endl;
+           
             state->_Cov = state->_Cov.selfadjointView<Eigen::Upper>();
-            cout<<"Cov"<<endl;
-            cout<<"K_active size:"<<K_active.rows()<<"*"<<K_active.cols()<<endl;
-            cout<<"L_nuisance size:"<<L_nuisance.rows()<<"*"<<L_nuisance.cols()<<endl;
-            cout<<"state->_Cross_Cov_AN size:"<<state->_Cross_Cov_AN.rows()<<"*"<<state->_Cross_Cov_AN.cols()<<endl;
+           
             state->_Cross_Cov_AN -= K_active*L_nuisance.transpose();
-            cout<<"Now we finish the Cov and Cross_Cov update"<<endl;
+
 
             Eigen::VectorXd diags = state->_Cov.diagonal();
             bool found_neg = false;
@@ -780,11 +545,8 @@ void StateHelper::SKFUpdate(State *state, const std::vector<Type *> &Hx_order, c
             state->_variables.at(i)->update(dx.block(state->_variables.at(i)->id(), 0, state->_variables.at(i)->size(), 1));
             }
             state->iter_count++;
-            // cout<<"imu state: "<<state->_imu->pos_linp().transpose()<<"imu clone state: "<<state->_clones_IMU[state->_timestamp]->pos_linp().transpose()<<endl;
-            // cout<<"imu state: "<<state->_imu->pos().transpose()<<"imu clone state: "<<state->_clones_IMU[state->_timestamp]->pos().transpose()<<endl;
         }
-        // sleep(1);
-        
+
     }
     
 
@@ -937,39 +699,26 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
       }
       Ha_order_big.push_back(var);
     }
-    cout<<"6"<<endl;
     Eigen::MatrixXd P_AA = StateHelper::get_marginal_covariance(state,Ha_order_big);
-    cout<<"6.1"<<endl;
     Eigen::MatrixXd P_AA_new = P_AA - M_a * S_inv * M_a.transpose();
-    cout<<"6.2"<<endl;
     Eigen::MatrixXd P_AT_new = -M_a * Ainv * Ht * tmp;
-    cout<<"6.3"<<endl;
     Eigen::MatrixXd P_TT_new = tmp;
-    cout<<"6.4"<<endl;
     Eigen::MatrixXd P_AN_new = -M_a * S_inv * M_n.transpose();
-    cout<<"6.5"<<endl;
     Eigen::MatrixXd P_TN_new = -tmp * Ht.transpose() * Ainv * M_n.transpose();
-    cout<<"7"<<endl;
+
     //* relative transformation should be the last variable in the state by now;
     assert(state->_Cov.rows()-state->transform_vio_to_map->size() == state->transform_vio_to_map->id());
     assert(active_size == state->transform_vio_to_map->id());
     assert(P_AA.rows() == active_size);
     //*update cov
-    cout<<"7.1"<<endl;
+
     state->_Cov.block(0,0,P_AA.rows(),P_AA.cols()) = P_AA_new;
-    cout<<"7.2"<<endl;
     state->_Cov.block(active_size,active_size,trans_size,trans_size) = P_TT_new;
-    cout<<"7.3"<<endl;
     state->_Cov.block(0,active_size,active_size,trans_size) = P_AT_new;
-    cout<<"7.4"<<endl;
     state->_Cov.block(active_size,0,trans_size,active_size) = P_AT_new.transpose();
-    cout<<"7.5"<<endl;
     state->_Cross_Cov_AN.block(0,0,active_size,nuisance_size) = P_AN_new;
-    cout<<"7.6"<<endl;
-    cout<<"nuisance size: "<<nuisance_size<<" trans_size: "<<trans_size<<" P_TN_new size: "<<P_TN_new.rows()<<" "<<P_TN_new.cols()<<endl;
-    cout<<"Cov size: "<<state->_Cov.rows()<<" Cov_AN size: "<<state->_Cross_Cov_AN.rows()<<" "<<state->_Cross_Cov_AN.cols()<<endl;
     state->_Cross_Cov_AN.block(active_size,0,trans_size,nuisance_size) = P_TN_new;
-    cout<<"8"<<endl;
+
 
     Eigen::VectorXd diags = state->_Cov.diagonal();
     bool found_neg = false;
@@ -994,11 +743,7 @@ void StateHelper::init_transform_update(State *state, const std::vector<Type *> 
       state->_variables.at(i)->update(error.block(state->_variables.at(i)->id(), 0, state->_variables.at(i)->size(), 1));
     }
     cout<<"9"<<endl;
-    // sleep(100);
-        // cout<<"imu state position: "<<state->_imu->pos().transpose()<<" imu clone state postion: "<<state->_clones_IMU[state->_timestamp]->pos().transpose()<<endl;
-        // cout<<"imu state orientation: "<<state->_imu->quat().transpose()<<" imu clone state orientation: "<<state->_clones_IMU[state->_timestamp]->quat().transpose()<<endl;
-        // cout<<"state timestamp: "<<to_string(state->_timestamp)<<" imu orientation: "<<state->_imu->quat().transpose()<<" imu position: "<<state->_imu->pos().transpose()<<endl;
-        
+  
 }
     
     
@@ -1125,15 +870,15 @@ void StateHelper::EKFMAPUpdate(State *state, const std::vector<Type *> &Hx_order
     cout<<"Hn size:"<<H_nuisance.rows()<<"*"<<H_nuisance.cols()<<endl;
     // Residual covariance S = H*Cov*H' + R
     Eigen::MatrixXd S(R.rows(), R.rows());
-    cout<<"S size:"<<S.rows()<<"*"<<S.cols()<<endl;
+
     S = Hx * Pxx_small * Hx.transpose();
-    cout<<"1"<<endl;
+
     S += Hx * Pxn_small * H_nuisance.transpose();
-    cout<<"2"<<endl;
+
     S += (Hx * Pxn_small * H_nuisance.transpose()).transpose();
-    cout<<"3"<<endl;
+
     S += H_nuisance * Pnn_small * H_nuisance.transpose();
-    cout<<"4"<<endl;
+
     S += R;
     cout<<"Now we finish the S"<<endl;
     
@@ -1159,35 +904,12 @@ void StateHelper::EKFMAPUpdate(State *state, const std::vector<Type *> &Hx_order
 
     Eigen::MatrixXd L_active=M_a.block(0,0,active_size,M_a.cols());
     Eigen::MatrixXd L_nuisance=M_a.block(active_size,0,nuisance_size,M_a.cols());
-    cout<<"L_active and L_nuisance"<<endl;
 
     // Eigen::MatrixXd K_active=L_active * Sinv.selfadjointView<Eigen::Upper>();
      Eigen::MatrixXd K_active=L_active * Sinv;
-    cout<<"K_active size: "<<K_active.rows()<<" "<<K_active.cols() <<endl;
+
     Eigen::MatrixXd K_nuisance=L_nuisance * Sinv;
-    // Eigen::MatrixXd K_nuisance=L_nuisance * Sinv.selfadjointView<Eigen::Upper>();
-    cout<<"K_nuisance size: "<<K_nuisance.rows()<<" "<<K_nuisance.cols() <<endl;
-    
-
-
-    //Eigen::MatrixXd K = M_a * Sinv.selfadjointView<Eigen::Upper>();
-//    Eigen::MatrixXd KHP=Eigen::MatrixXd::Zero(state->_Cov.rows(),state->_Cov.cols());
-//    KHP.block(0,0,active_size,active_size)=K_active*L_active.transpose();
-//    KHP.block(0,active_size,active_size,nuisance_size)=K_active*L_nuisance.transpose();
-//    KHP.block(active_size,0,nuisance_size,active_size)=KHP.block(0,active_size,active_size,nuisance_size).transpose();
-   
-    // {
-    //     Eigen::VectorXd diags = state->_Cov.diagonal();
-    //     Eigen::VectorXd diags_L=(L_active*L_active.transpose()).diagonal();
-    //     cout<<"diags_L.max: "<<diags_L.maxCoeff()<<endl;
-    // bool found_neg = false;
-    // for(int i=0; i<diags.rows(); i++) {
-    //     if(diags(i)-diags_L(i) < 0.0) {
-    //         printf(RED "StateHelper::EKFUpdate() diags-diags_L - diagonal at %d is %.2f\n" RESET,i,diags(i));
-    //         found_neg = true;
-    //     }
-    // }
-    // }
+  
 
 
 
@@ -1207,22 +929,11 @@ void StateHelper::EKFMAPUpdate(State *state, const std::vector<Type *> &Hx_order
         cout<<"state->_Cross_Cov_AN size:"<<state->_Cross_Cov_AN.rows()<<"*"<<state->_Cross_Cov_AN.cols()<<endl;
         state->_Cross_Cov_AN -= K_active*L_nuisance.transpose();
         cout<<"Now we finish the Cov and Cross_Cov update"<<endl;
-        // state->_Cov_nuisance -= K_nuisance*L_nuisance.transpose();
-        // Cov = 0.5*(state->_Cov_nuisance+state->_Cov_nuisance.transpose());
-        // state->_Cov_nuisance=Cov;
+        
         state->_Cov_nuisance.triangularView<Eigen::Upper>() -= K_nuisance*L_nuisance.transpose();
         state->_Cov_nuisance = state->_Cov_nuisance.selfadjointView<Eigen::Upper>();
 
-        // if(state->set_transform)
-        // {
-        //     MatrixXd cov_trans=state->_Cov.block(state->transform_vio_to_map->id(),state->transform_vio_to_map->id(),6,6);
-        
-        // EigenSolver<Matrix<double,6,6>> es(cov_trans);
-        
-        // MatrixXd D = es.pseudoEigenvalueMatrix();
-        // cout<<D<<endl;
-        // }
-        
+       
 
         // We should check if we are not positive semi-definitate (i.e. negative diagionals is not s.p.d)
         Eigen::VectorXd diags = state->_Cov.diagonal();
@@ -1295,24 +1006,18 @@ Eigen::MatrixXd StateHelper::get_marginal_covariance(State *state, const std::ve
 
     // For each variable, lets copy over all other variable cross terms
     // Note: this copies over itself to when i_index=k_index
-    // cout<<"small_variable size:"<<small_variables.size()<<endl;
-    // cout<<"cov_size: "<<cov_size<<endl;
-    // cout<<"state->Cov size"<<state->_Cov.rows()<<endl;
+   
     int i_index = 0;
     for (size_t i = 0; i < small_variables.size(); i++) {
         int k_index = 0;
         for (size_t k = 0; k < small_variables.size(); k++) {
-            // cout<<"small_variables[i]->id(): "<<small_variables[i]->id()<<" size:"<<small_variables[i]->size()<<endl;
-            // cout<<"small_variables[k]->id(): "<<small_variables[k]->id()<<" size:"<<small_variables[k]->size()<<endl;
             Small_cov.block(i_index, k_index, small_variables[i]->size(), small_variables[k]->size()) =
-                    state->_Cov.block(small_variables[i]->id(), small_variables[k]->id(), small_variables[i]->size(), small_variables[k]->size());
+            state->_Cov.block(small_variables[i]->id(), small_variables[k]->id(), small_variables[i]->size(), small_variables[k]->size());
             k_index += small_variables[k]->size();
         }
         i_index += small_variables[i]->size();
     }
 
-    // Return the covariance
-    //Small_cov = 0.5*(Small_cov+Small_cov.transpose());
     return Small_cov;
 }
 
@@ -1329,9 +1034,7 @@ Eigen::MatrixXd StateHelper::get_marginal_nuisance_covariance(State *state,
 
     // For each variable, lets copy over all other variable cross terms
     // Note: this copies over itself to when i_index=k_index
-    // cout<<"small_variable size:"<<small_variables.size()<<endl;
-    // cout<<"cov_size: "<<cov_size<<endl;
-    // cout<<"state->Cov size"<<state->_Cov.rows()<<endl;
+
     int i_index = 0;
     for (size_t i = 0; i < small_variables.size(); i++) {
         int k_index = 0;
@@ -1482,12 +1185,6 @@ void StateHelper::marginalize(State *state, Type *marg) {
             remaining_variables.push_back(state->_variables.at(i));
         }
     }
-    // //we also need to reset the local id of transfor_vio_to_map, as this variable is used in "get_feature_jacobian_kf"
-    // //by zzq
-    // if(state->set_transform && state->transform_vio_to_map->id() > marg_id)
-    // {
-    //      state->transform_vio_to_map->set_local_id(state->transform_vio_to_map->id()-marg_size);
-    // }
 
     // Delete the old state variable to free up its memory
     delete marg;
@@ -2208,12 +1905,6 @@ bool StateHelper::reset_map_transformation(State *state,Matrix<double,7,1> pose_
     scale=sqrt(scale);
     cout<<"min: "<<min<<" scale: "<<scale<<endl;
     state->_Cov.block(local_id,local_id,variable_size,variable_size)=P;
-    // state->_Cov.block(0,local_id,local_id,variable_size)=state->_Cov.block(0,local_id,local_id,variable_size)*scale;
-    // state->_Cov.block(local_id,0,variable_size,local_id)=state->_Cov.block(local_id,0,variable_size,local_id)*scale;
-    // state->_Cross_Cov_AN.block(local_id,0,variable_size,nuisance_size)=state->_Cross_Cov_AN.block(local_id,0,variable_size,nuisance_size)*scale;
-    // state->_Cov.block(0,local_id,local_id,variable_size)=MatrixXd::Zero(local_id,variable_size);
-    // state->_Cov.block(local_id,0,variable_size,local_id)=MatrixXd::Zero(variable_size,local_id);
-    // state->_Cross_Cov_AN.block(local_id,0,variable_size,nuisance_size)=MatrixXd::Zero(variable_size,nuisance_size);
     cout<<"new set transform: "<<state->transform_vio_to_map->quat()<<" "<<state->transform_vio_to_map->pos()<<endl;
     return true;
 }

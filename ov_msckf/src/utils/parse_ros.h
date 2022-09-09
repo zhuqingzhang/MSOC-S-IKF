@@ -66,6 +66,7 @@ namespace ov_msckf {
         nh.param<bool>("use_prior_map",params.use_prior_map,params.use_prior_map);
         nh.param<bool>("use_schmidt",params.state_options.use_schmidt,params.state_options.use_schmidt);
         nh.param<bool>("multi_match",params.multi_match,params.multi_match);
+        nh.param<string>("used_dataset",params.used_dataset,params.used_dataset);
         nh.param<bool>("ptmeas",params.state_options.ptmeas,params.state_options.ptmeas);
         nh.param<bool>("trans_fej",params.state_options.trans_fej,params.state_options.trans_fej);
         nh.param<double>("kf_match_interval",params.kf_match_interval,params.kf_match_interval);

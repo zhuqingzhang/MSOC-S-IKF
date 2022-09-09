@@ -131,16 +131,10 @@ namespace ov_msckf {
          * @param[out] x_order Extra variables our extra Jacobian has (for example anchored pose)
          */
         static void get_feature_jacobian_full(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &x_order);
-
-        static void get_feature_jacobian_kf(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_n_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
         
-        static void get_feature_jacobian_kf2(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        
-        static void get_feature_jacobian_kf3(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        //the different between kf3 and kf4 is that kf4 computes Jacobian using linearized point for optimization
-        static bool get_feature_jacobian_kf4(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
-        //kf5 use fej of trans to compute jacobian
-        static bool get_feature_jacobian_kf5(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
+        static bool get_feature_jacobian_kf(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
+        //fej of trans to compute jacobian
+        static bool get_feature_jacobian_kf_transfej(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
         
         static void get_feature_jacobian_ukf(State* state, UpdaterHelperFeature &feature, Eigen::MatrixXd &H_f, Eigen::MatrixXd &H_n, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<Type*> &n_order,std::vector<Type*> &x_order);
         

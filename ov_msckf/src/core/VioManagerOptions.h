@@ -117,6 +117,9 @@ namespace ov_msckf {
 
         bool delay=false;
 
+        string used_dataset = "euroc"; // euroc,sim,YQ,kaist,fourseasons
+
+
 
 
         

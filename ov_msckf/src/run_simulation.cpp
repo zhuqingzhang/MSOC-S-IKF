@@ -74,16 +74,13 @@ int main(int argc, char** argv)
     viz = new RosVisualizer(nh, sys, sim);
 #endif
     
-    if(params.use_prior_map)
+   if(params.use_prior_map)
    {
-       if(params.multi_match)
-            sys->loadPoseGraph3(params.map_save_path,params.pose_graph_filename,params.keyframe_pose_filename);
-       else
-           sys->loadPoseGraph2(params.map_save_path,params.pose_graph_filename,params.keyframe_pose_filename);
+       
+      sys->loadMatchingInfo(params.map_save_path,params.pose_graph_filename,params.keyframe_pose_filename);
 
    }
-   cout<<"finish load Posegraph "<<endl;
-
+  
    int sim_feats_num;
    sim_feats_num=sim->get_sim_feats_num();
    sys->trackFEATS->set_sim_feats_num(sim_feats_num);

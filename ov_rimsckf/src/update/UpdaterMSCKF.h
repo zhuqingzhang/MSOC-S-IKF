@@ -98,22 +98,10 @@ namespace ov_rimsckf {
 
         void update_skf(State *state, std::vector<Feature*>& feature_vec);
 
-        bool update_skf_with_KF(State *state, std::vector<Feature*>& feature_vec);
+        bool update_skf_with_KF(State *state, std::vector<Feature*>& feature_vec,bool iterative);
         
-        //the difference between KF2 and KF3 is that for each Feature in feature_vec, KF2 only consider 
-        //each Feature only has one matched KF feature, while KF3 consider the situation that multi KFs' features 
-        // matched with on Feature
-        bool update_skf_with_KF2(State *state, std::vector<Feature*>& feature_vec);
-
-        bool update_skf_with_KF3(State *state, std::vector<Feature*>& feature_vec,bool iterative);
-        //using  get_feature_jacobian_kf5, used for iterative ekf
-        bool update_skf_with_KF4(State *state, std::vector<Feature*>& feature_vec,bool iterative);
-        ////KF6 is formulated by relative pose error, not reprojection error
-        bool update_skf_with_KF6(State *state, vector<Keyframe*> kfs, int anchor_id,bool iterative, Matrix3d R_kf_cur,
-                                 Vector3d t_kf_cur, int flag); //flag=0 optimize trans, flag=1 optimize cur, flag=2 optimize both
         bool update_noskf_with_KF(State *state, std::vector<Feature *> &feature_vec, bool iterative);
-        // bool update_skf_with_KF3_iter(State *state, std::vector<Feature*>& feature_vec);
-
+       
         bool update_initial_transform(State *state, std::vector<Feature *>& feature_vec);
 
 

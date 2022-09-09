@@ -334,13 +334,7 @@ void RosVisualizer::publish_state() {
         vars.clear();
         vars.push_back(state->transform_map_to_vio->p());
         vars.push_back(state->transform_map_to_vio->q());
-        // vars.push_back(state->transform_map_to_vio);
-        // Eigen::Matrix<double,6,6> cov_transform_before = StateHelper::get_marginal_covariance(_app->get_state(),vars);
-        // Eigen::Matrix<double,6,9> J = Eigen::Matrix<double,6,9>::Zero();
-        // J.block(0,3,3,3) = -Eigen::Matrix3d::Identity();
-        // J.block(0,6,3,3) = skew_x(t_MapinVIO);
-        // J.block(3,0,3,3) = -R_MaptoVIO.transpose();
-        // cov_transform = J * cov_related * J.transpose();
+
         cov_transform = StateHelper::get_marginal_covariance(_app->get_state(),vars);
         
 
@@ -385,12 +379,7 @@ void RosVisualizer::publish_state() {
     statevars.push_back(state->_imu->pose()->p());
     statevars.push_back(state->_imu->pose()->q());
     Eigen::Matrix<double,6,6> covariance_posori_ = StateHelper::get_marginal_covariance(_app->get_state(),statevars);
-    // //Note that the covariance is based on the definition of nonlinear error, we need to transform it to standard linear error
-    // Eigen::Matrix<double,6,6> J = Eigen::Matrix<double,6,6>::Zero();
-    // J.block(0,0,3,3) = -Matrix3d::Identity();
-    // J.block(0,3,3,3) = skew_x(state->_imu->pos());
-    // J.block(3,3,3,3) = -state->_imu->Rot();
-    // Eigen::Matrix<double,6,6> covariance_posori_ = J * covariance_posori * J.transpose();
+
     for(int r=0; r<6; r++) {
         for(int c=0; c<6; c++) {
             // poseIinM.pose.covariance[6*r+c] = covariance_posori_(r,c);
@@ -434,43 +423,7 @@ void RosVisualizer::publish_state() {
     geometry_msgs::PoseWithCovarianceStamped posewithCov_rect;
     posewithCov_rect.header=poseIinM.header;
     posewithCov_rect.pose.pose=posetemp_rect.pose;
-    // // cout<<"transformlocation: "<<state->transform_vio_to_map->id()<<endl;
-    // // Eigen::Matrix<double,6,6> cov_trans=state->_Cov.block(state->transform_vio_to_map->id(),state->transform_vio_to_map->id(),6,6);
-    // // Eigen::Matrix<double,6,6> cov_trans_=Eigen::Matrix<double,6,6>::Zero();
-    // std::vector<Type*> vars;
-    // // vars.push_back(state->_imu->pose());
-    // vars.push_back(state->_clones_IMU[state->_timestamp]);
-    // vars.push_back(state->transform_map_to_vio);
-    // Eigen::Matrix<double,12,12> cov_cur_trans=StateHelper::get_marginal_covariance(_app->get_state(),vars);
-    // // cout<<"cov_cur_trans:"<<endl<<cov_cur_trans<<endl;
-    // //compute the rect pose covariance. R_rect=R_trans*R_cur; p_rect=R_trans*p_cur+p_trans;
-    // Eigen::Matrix3d R_VinstoMap=state->transform_vio_to_map->Rot();
-    // Eigen::Vector3d p_VinsinMap=state->transform_vio_to_map->pos();
-    // // Eigen::Matrix3d R_CurtoVins=state->_imu->Rot().transpose();
-    // // Eigen::Vector3d p_CurinVins=state->_imu->pos();
-    // Eigen::Matrix3d R_CurtoVins=state->_clones_IMU[state->_timestamp]->Rot();
-    // Eigen::Vector3d p_CurinVins=state->_clones_IMU[state->_timestamp]->pos();
-    // Eigen::Matrix<double,6,12> F=Eigen::Matrix<double,6,12>::Zero();
-    // //dR_rect_dR_cur
-    // F.block(0,0,3,3)=Jl_so3_inv(log_so3(R_VinstoMap*R_CurtoVins))*R_VinstoMap;
-    // //dR_rect_dR_trans;
-    // F.block(0,6,3,3)=Jl_so3_inv(log_so3(R_VinstoMap*R_CurtoVins));
-    // //dp_rect_dp_cur
-    // F.block(3,3,3,3)=R_VinstoMap;
-    // //dp_rect_dR_trans
-    // F.block(3,6,3,3)=skew_x(R_VinstoMap*p_CurinVins);
-    // //dp_rect_dp_trans
-    // F.block(3,9,3,3)=Matrix3d::Identity();
-    // Eigen::Matrix<double,6,6> cov_rect=F*cov_cur_trans*F.transpose();
-    // Eigen::Matrix<double,6,6> cov_rect_=Eigen::Matrix<double,6,6>::Zero();
-    // //in order of position and rotation
-    // cov_rect_.block(0,0,3,3)=cov_rect.block(3,3,3,3);
-    // cov_rect_.block(3,3,3,3)=cov_rect.block(0,0,3,3);
-    // cov_rect_.block(0,3,3,3)=cov_rect.block(3,0,3,3);
-    // cov_rect_.block(3,0,3,3)=cov_rect.block(0,3,3,3);
-    // // cout<<"pos_est cov:"<<endl<<covariance_posori.block(0,0,3,3)<<endl<<"pos_rect cov:"<<cov_rect_.block(0,0,3,3)<<endl;
-    // // cout<<"r_est_cov: "<<endl<<covariance_posori.block(3,3,3,3)<<endl<<"r_rect_cov: "<<cov_rect_.block(3,3,3,3)<<endl;
-    // // cov_rect_=covariance_posori;
+   
     Matrix<double,6,6> cov_rect_ = Matrix<double,6,6>::Identity();
     // cout<<"before for"<<endl;
     for(int r=0; r<6; r++) {
@@ -480,21 +433,7 @@ void RosVisualizer::publish_state() {
     }
     pub_poseimu_rect.publish(posewithCov_rect);
     }
-    // else
-    // {
-    //     cout<<"in publish poseimu_rect"<<endl;
-    //     geometry_msgs::PoseWithCovarianceStamped posewithCov_rect;
-    // posewithCov_rect.header=poseIinM.header;
-    // posewithCov_rect.pose.pose=posetemp_rect.pose;
-    // //Eigen::Matrix<double,6,6> cov_trans=state->_Cov.block(state->transform_vio_to_map->id(),state->transform_vio_to_map->id(),6,6);
-    // Eigen::Matrix<double,6,6> cov_rect_=covariance_posori;
-    // for(int r=0; r<6; r++) {
-    //     for(int c=0; c<6; c++) {
-    //         posewithCov_rect.pose.covariance[6*r+c] = cov_rect_(r,c);
-    //     }
-    // }
-    // pub_poseimu_rect.publish(posewithCov_rect);
-    // }
+    
     
 
     // Create our path (imu)

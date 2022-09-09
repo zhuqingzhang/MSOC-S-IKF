@@ -124,11 +124,6 @@ if (catkin_FOUND)
     add_executable(run_simulation src/run_simulation.cpp)
     target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
 
-    add_executable(run_serial_msckf_office src/ros_serial_msckf_office.cpp)
-    target_link_libraries(run_serial_msckf_office ov_msckf_lib ${thirdparty_libraries})
-
-    add_executable(run_serial_msckf_office_stereo src/ros_serial_msckf_office_stereo.cpp)
-    target_link_libraries(run_serial_msckf_office_stereo ov_msckf_lib ${thirdparty_libraries})
 
     add_executable(gen_sim_matching src/gen_sim_matching.cpp)
     target_link_libraries(gen_sim_matching ov_msckf_lib ${thirdparty_libraries})
@@ -148,13 +143,7 @@ else()
 endif()
 
 
-add_executable(test_sim_meas src/test_sim_meas.cpp)
-target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
 
-add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
 
-add_executable(test_kf_match src/test_kf_match.cpp)
-target_link_libraries(test_kf_match ov_msckf_lib ${thirdparty_libraries})
 
 

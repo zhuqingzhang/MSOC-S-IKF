@@ -148,7 +148,6 @@ namespace ov_msckf {
 
         }
 
-        void init_relative_transformation(State* state);
 
 
         /// If we are initialized or not
@@ -266,30 +265,10 @@ namespace ov_msckf {
             feat_timestamps = hist_feat_timestamps;
         }
 
-        void loadKeyframe(Keyframe* cur_kf, bool flag_detect_loop=false);
+       
 
-
-        void loadVocabulary(std::string map_save_path, std::string voc_filename)
-        {
-                // std::string voc_path=map_save_path+voc_filename;
-                // voc = new BriefVocabulary(voc_path);
-                // matchKF->db->setVocabulary(*voc, false, 0);
-                // cout<<"db size:"<<matchKF->db->size()<<endl;
-        }
-
-        void loadPoseGraph(std::string map_save_path,std::string pose_graph_filename, std::string keyframe_pose_filename);
-        
-        //consider the one keyframe match with multi query frame
-        void loadPoseGraph2(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename);
-
-        void loadPoseGraph3(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename);
-
-//         void addKeyFrameIntoVoc(Keyframe* keyframe)
-//         {
-// //            cout<<"in addkeyframeintoVoc"<<endl;
-//             matchKF->db->add(keyframe->brief_descriptors);
-//             cout<<"db size:"<<matchKF->db->size()<<endl;
-//         }
+        //load matching information
+        void loadMatchingInfo(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename);
 
         void get_image_features(double timestamp, size_t cam_id,vector<cv::Point2f> & uv,vector<cv::Point2f> & uv_norm,
                                 vector<size_t>& feas_id);
@@ -298,24 +277,12 @@ namespace ov_msckf {
 
         bool ComputeRelativePose2(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur);
 
-        bool ComputeRelativePose3(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur);
-
-        bool ComputeRelativePose4(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur);
-
-        //add the keyframe observation into the Feature class
-        bool do_feature_link(double timestamp, Keyframe *loop_kf,vector<cv::Point2f>& uv_loop,vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv);
-
-        void do_feature_link(Keyframe *cur_kf, Keyframe *loop_kf);
-
-        std::vector<cv::Point2f> get_match_feature(double timestamp, Keyframe *loop_kf,vector<cv::Point2f>& uv_loop,vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv, vector<Feature*>& feats_with_loop);
     
         void get_multiKF_match_feature(double timestamp, vector<Keyframe*> loop_kfs, int &index, vector<cv::Point2f>& uv_loop,vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv, vector<Feature*>& feats_with_loop);    
         
-        Keyframe* get_loop_kf(State *state);
 
         vector<Keyframe*> get_loop_kfs(State *state);
 
-        void test_feature_match(double timestamp, cv::Mat& img0, cv::Mat& img1, size_t cam_id0, size_t cam_id1);
         
         double get_approx_ts(double timestamp)
         {
@@ -348,7 +315,6 @@ namespace ov_msckf {
 
         }
 
-        void merge_same_feature();
         
 
     // protected:

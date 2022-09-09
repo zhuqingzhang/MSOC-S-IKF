@@ -155,12 +155,12 @@ VioManager::VioManager(VioManagerOptions& params_, Simulator* sim): simulator(si
     }
 
     // Initialize our matcher to do kf match
-    cout<<"// Initialize our matcher to do kf match"<<endl;
     if(params.use_robust_match)
     {
+        //use offline matched information
         matchKF = new MatchRobust(params.match_base_options);
     }
-    else
+    else //TODO:to be implemented
     {
         if(MapFeatureType::Type::Brief==MapFeatureType::from_string(params.match_base_options.map_feature_type))
         {
@@ -178,9 +178,7 @@ VioManager::VioManager(VioManagerOptions& params_, Simulator* sim): simulator(si
         state->kfdatabase = matchKF->get_interval_kfdatabase();
         th_matchKF = new thread(&ov_core::MatchBase::DetectAndMatch, matchKF);
     }
-    
 
-    cout<<"// finsih Initialize our matcher to do kf match"<<endl;
 
     // Initialize our state propagator
     propagator = new Propagator(params.imu_noises, params.gravity);
@@ -479,24 +477,15 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
     Keyframe *cur_kf_0= nullptr;
     Keyframe *cur_kf_1= nullptr;
     if(params.use_prior_map && (int)state->_clones_IMU.size() >= std::min(state->_options.max_clone_size,4)) {
-    //    if (last_kf_match_time == -1 || timestamp - last_kf_match_time >= params.kf_match_interval) 
-       {
+
            //get the current images features
           cout<<"in cur_kf construction"<<endl;
-//           vector<cv::Point2f> uv_0, uv_1;
-//           vector<cv::Point2f> uv_norm_0, uv_norm_1;
-//           vector<size_t> feature_id_0, feature_id_1;
-//           get_image_features(timestamp, cam_id0, uv_0, uv_norm_0, feature_id_0);
-//           get_image_features(timestamp, cam_id1, uv_1, uv_norm_1, feature_id_1);
-//
-//           cout<<"after get features"<<endl;
 
            //first, we need to construct current images as Keyframe type for future convienience
            size_t index_0 = max_kf_id;
            max_kf_id++;
            cv::Mat img0;
            cur_kf_0=new Keyframe(timestamp,index_0,camids[0],img0,params.camera_intrinsics[camids[0]]);
-
 
            if(camids.size()>1)
            {
@@ -508,7 +497,6 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
             cout<<"finish cur_kf_1"<<endl;
            }
 
-       }
    }
 
     // Call on our propagate and update function
@@ -597,10 +585,7 @@ void VioManager::do_feature_propagate_update(double timestamp, Keyframe* cur_kf_
              state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
 
 
-    if(!state->_options.av_has_noise)
       propagator->propagate_and_clone(state, timestamp);
-    else
-      propagator->propagate_and_clone2(state, timestamp);
 
 
 
@@ -904,29 +889,9 @@ void VioManager::do_feature_propagate_update(double timestamp, Keyframe* cur_kf_
                   Vector3d p_loopIncur;
                   Matrix3d R_loopTocur;
                   
-                  // if(simulator!=nullptr)
-                  // {
-                  //   init_relative_transformation(state);
-
-                  //   state->delay_clones.push_back(timestamp);
-              
-                  //   state->delay_loop_features.push_back(feats_with_loop);
-
-                  //   last_kf_match_time=timestamp;
-                  //   state->last_kf_match_position=state->_imu->pos();
-                  //   //add the loop_kf into state nuisance part
-                  //   for(int i=0;i<loop_kfs.size();i++)
-                  //   {
-                  //     StateHelper::add_kf_nuisance(state,loop_kfs[i]);
-                  //   }
-
-                  //   do_map_kf_update=true;
-                  // }
-                  // else
-                  {
+                 
                     if(loop_kf->PnPRANSAC(uv_norm,uv_3d_loop,p_loopIncur,R_loopTocur,params.match_num_thred))
                     {
-                    
                       {
                       Eigen::MatrixXd Cov_loopToCur;
                       updaterOptimize->Optimize_initial_transform_with_cov(state,loop_kf,p_loopIncur,R_loopTocur,Cov_loopToCur);
@@ -943,35 +908,7 @@ void VioManager::do_feature_propagate_update(double timestamp, Keyframe* cur_kf_
                       ComputeRelativePose(cur_kf_0,loop_kf,p_loopIncur,R_loopTocur);
                       do_map_kf_update=false;
                       }
-                      // if(ComputeRelativePose(cur_kf_0,loop_kf,p_loopIncur,R_loopTocur))
-                      // {
-                      //   if(loop_kfs.size()>1)
-                      //   {
-                      //       updaterOptimize->Optimize_initial_transform(state,loop_kfs);
-                      //   }
-                        
-                      //   last_kf_match_time=timestamp;
-                      //   state->last_kf_match_position=state->_imu->pos();
-                      //   //add the loop_kf into state nuisance part
-                      //   for(int i=0;i<loop_kfs.size();i++)
-                      //   {
-                      //     StateHelper::add_kf_nuisance(state,loop_kfs[i]);
-                      //   }
-                        
-                      //   // updaterMSCKF->update_initial_transform(state,feats_with_loop);
-
-                      //   // state->delay_clones.push_back(timestamp);
-              
-                      //   // state->delay_loop_features.push_back(feats_with_loop);
-
-                      //   // do_map_kf_update=true;
-                      //   //
-                      //   std::cout<<"============================map is initialized!====================="<<endl;
-                      //   cout<<" p_loopinCur: "<<p_loopIncur.transpose()<<endl;
-                      // }
                     }
-                  }
-
                   
                 }
                 else
@@ -1031,7 +968,7 @@ void VioManager::do_feature_propagate_update(double timestamp, Keyframe* cur_kf_
         bool flag=false;
         state->iter_count=0;
         if(state->_options.use_schmidt)
-            flag=updaterMSCKF->update_skf_with_KF3(state,loop_features,false);
+            flag=updaterMSCKF->update_skf_with_KF(state,loop_features,false);
         else
             flag=updaterMSCKF->update_noskf_with_KF(state,loop_features,false);
         // sleep(5);
@@ -1082,7 +1019,7 @@ void VioManager::do_feature_propagate_update(double timestamp, Keyframe* cur_kf_
             duration=state->_timestamp-last_kf_match_time;
             // state->iter_count=state->_options.iter_num-1;          
             if(state->_options.use_schmidt)
-                flag=updaterMSCKF->update_skf_with_KF3(state,loop_features,false);
+                flag=updaterMSCKF->update_skf_with_KF(state,loop_features,false);
             else
                 flag=updaterMSCKF->update_noskf_with_KF(state,loop_features,false);
             state->iter=false;
@@ -1377,201 +1314,8 @@ void VioManager::update_keyframe_historical_information(const std::vector<Featur
 }
 
 
-void VioManager::loadPoseGraph(std::string map_save_path,std::string pose_graph_filename,std::string keyframe_pose_filename ) {
-    
-    boost::posix_time::ptime t1,t2;
-    t1 = boost::posix_time::microsec_clock::local_time();
-    max_kf_id=0;
 
-    ifstream f1,f2;
-    string file_match = map_save_path + pose_graph_filename;
-    string file_pose = map_save_path + keyframe_pose_filename;
-
-    printf("load matches from: %s \n", file_match.c_str());
-    printf("load keyframe pose from: %s \n", file_pose.c_str());
-    printf("loading...\n");
-
-    f1.open(file_match.data());
-    assert(f1.is_open());
-    
-
-    string str,result;
-    int line_num=1;
-    int match_num=0;
-    double query_ts,kf_ts;
-    int count=0;
-    int add_kf_num=0;
-    int nums=0;
-    string keyframe_pose="/tmp/kf_pose.txt";
-    ofstream of;
-    of.open(keyframe_pose.data());
-    assert(of.is_open());
-    while (getline(f1,str))
-    {
-        
-        if(line_num%2==1)  //query_timestamp, keyframe_timestamp, match_number
-        {
-           stringstream line(str);
-           line>>result;
-        //    cout<<"***"<<result<<endl;
-           query_ts=stod(result);
-        //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-           line>>result;
-        //    cout<<"==="<<result<<endl;
-           kf_ts=stod(result);
-           kf_ts=floor(kf_ts*10)/10.0;  //保留一位小数
-        //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-           line>>result;
-           match_num=stoi(result);
-           
-        }
-        else if(line_num%2==0)  //{q2d.x,q2d.y,kf2d.x,kf2d.y,kf3d.x,kf3d.y,kf3d.z} ...  
-        {
-           Keyframe* kf=new Keyframe();
-           stringstream line(str);
-           VectorXd intrinsics=params.camera_intrinsics[0];
-           cout<<"match num:"<<match_num<<endl;
-           for(int i=0;i<match_num;i++)
-           {
-               cv::Point2f q2d,kf2d,projectkf2d;
-               cv::Point3f kf3d;
-               line>>result;
-            //    cout<<"uv_x: "<<result<<" ";
-               q2d.x=stof(result);
-            //    cout<<"uv_x load: "<<q2d.x<<endl;
-               line>>result;
-            //    cout<<"uv_y: "<<result<<" ";
-               q2d.y=stof(result);
-            //    cout<<"uv_y load: "<<q2d.y<<endl;
-               line>>result;
-            //    cout<<"kuv_x: "<<result<<" ";
-               kf2d.x=stof(result);
-            //    cout<<"kuv_x load: "<<kf2d.x<<endl;
-               line>>result;
-            //    cout<<"kuv_y: "<<result<<" ";
-               kf2d.y=stof(result);
-            //    cout<<"kuv_y load: "<<kf2d.y<<endl;
-               line>>result;
-            //    cout<<"k3d_x: "<<result<<" ";
-               kf3d.x=stof(result);
-            //    cout<<"k3d_x load: "<<kf3d.x<<endl;
-               line>>result;
-            //    cout<<"k3d_y: "<<result<<" ";
-               kf3d.y=stof(result);
-            //    cout<<"k3d_y load: "<<kf3d.y<<endl;
-               line>>result;
-            //    cout<<"k3d_z: "<<result<<" ";
-               kf3d.z=stof(result);
-            //    cout<<"k3d_z load: "<<kf3d.z<<endl;
-               projectkf2d.x=kf3d.x/kf3d.z;
-               projectkf2d.y=kf3d.y/kf3d.z;
-               projectkf2d.x=intrinsics(0)*projectkf2d.x+intrinsics(2);
-               projectkf2d.y=intrinsics(1)*projectkf2d.y+intrinsics(3);
-               if(abs(projectkf2d.x-kf2d.x)<50&&abs(projectkf2d.y-kf2d.y)<50)
-               {
-                 kf->matched_point_2d_uv.push_back(q2d);
-                 kf->point_2d_uv.push_back(kf2d);
-                 kf->point_3d.push_back(kf3d);
-               }
-           }
-           if(kf->matched_point_2d_uv.size()>params.match_num_thred)
-           {
-                 nums++;
-           }      
-           kf->time_stamp=kf_ts;
-        //    cout<<"kf_ts: "<<to_string(kf->time_stamp)<<endl;
-           kf->loop_img_timestamp=round(query_ts*10000)/10000.0;
-        //    cout<<"query_ts: "<<to_string(kf->loop_img_timestamp)<<endl;
-           max_kf_id++;
-           kf->index=max_kf_id;
-
-           f2.open(file_pose.data());
-           assert(f2.is_open());
-           string str1,res1;
-           bool get_pose=false;
-           while(getline(f2,str1))  //timestamp,tx,ty,tz,qx,qy,qz,qw
-           {
-             stringstream line1(str1);
-             line1>>res1;
-             double ts=stod(res1);
-             double timestp=ts;
-             ts=floor(ts*10)/10.0; //保留一位小数
-             if(ts==kf->time_stamp)
-             {
-                 line1>>res1;
-                //  cout<<"tx read: "<<res1<<" ";
-                 float tx=atof(res1.c_str());
-                //  cout<<"tx load: "<<tx<<endl;
-                 line1>>res1;
-                //  cout<<"ty read: "<<res1<<" ";
-                 float ty=atof(res1.c_str());
-                //  cout<<"ty load: "<<ty<<endl;
-                 line1>>res1;
-                //  cout<<"tz read: "<<res1<<" ";
-                 float tz=atof(res1.c_str());
-                //  cout<<"tz load: "<<tz<<endl;
-                 line1>>res1;
-                //  cout<<"qx read: "<<res1<<" ";
-                 float qx=atof(res1.c_str());
-                //  cout<<"qx load: "<< qx <<endl;
-                 line1>>res1;
-                //  cout<<"qy read: "<<res1<<" ";
-                 float qy=atof(res1.c_str());
-                //  cout<<"qy load: "<<qy<<endl;
-                 line1>>res1;
-                //  cout<<"qz read: "<<res1<<" ";
-                 float qz=atof(res1.c_str());
-                //  cout<<"qz load: "<<qz<<endl;
-                 line1>>res1;
-                //  cout<<"qw read: "<<res1<<" ";
-                 float qw=atof(res1.c_str());
-                //  cout<<"qw load: "<<qw<<endl;
-                 //here we load the quaternion in the form of Hamilton,we need to tranform it into JPL
-                 Quaterniond q1(qw,qx,qy,qz);  
-                 Quaterniond q1_JPL(q1.toRotationMatrix().transpose());
-                 Eigen::Matrix<double,7,1> q_kfInw;
-                 q_kfInw<<q1_JPL.x(),q1_JPL.y(),q1_JPL.z(),q1_JPL.w(),tx, ty, tz;
-                 kf->_Pose_KFinWorld->set_value(q_kfInw);
-                 kf->_Pose_KFinWorld->set_fej(q_kfInw);
-                 kf->_Pose_KFinWorld->set_linp(q_kfInw);
-                 cout<<"get keyframe pose"<<endl;
-                 get_pose=true;
-                 count++;
-                 of<<to_string(timestp)<<" "<<to_string(tx)<<" "<<to_string(ty)<<" "<<to_string(tz)<<" "<<to_string(qx)<<" "<<to_string(qy)<<" "<<to_string(qz)<<" "<<to_string(qw)<<endl;
-                 break;
-             }
-
-           }
-           f2.close();
-           kf->cam_id=0;  //kf is from left cam
-           intrinsics.conservativeResize(9,1);
-           intrinsics(8)=0;  //is fisheye or not
-           kf->_intrinsics=intrinsics; 
-        //    cout<<"kf->intrinsics "<<kf->_intrinsics.transpose()<<endl;  
-
-           //add curkf into keyframe database
-           if(get_pose&&kf->matched_point_2d_uv.size()>0)
-           {
-               state->insert_keyframe_into_database(kf);
-               add_kf_num++;
-           }
-        //    cout<<"load the "<<max_kf_id<<"th kf with timestamp: "<<kf->time_stamp<<endl;
-        //    cout<<"num matches: "<<match_num<<" "<<kf->matched_point_2d_uv.size()<<" "<<kf->point_2d_uv.size()<<" "<<kf->point_3d.size()<<endl;
-
-        }
-        line_num++;
-    }
-    cout<<"count: "<<count<<" add_kf_num: "<<add_kf_num<<endl;
-    cout<<"kfdb size: "<<state->get_kfdataBase()->get_internal_data().size()<<endl;
-    cout<<"match num > macth num thred: "<<nums<<endl;
-    max_kf_id_in_database=max_kf_id;
-    f1.close();
-    t2=boost::posix_time::microsec_clock::local_time();
-    printf("load pose graph time: %f s\n", (t2-t1).total_microseconds() * 1e-6);
-
-}
-
-void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename)
+void VioManager::loadMatchinginfo(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename)
 {
      boost::posix_time::ptime t1,t2;
     t1 = boost::posix_time::microsec_clock::local_time();
@@ -1588,8 +1332,7 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
     f1.open(file_match.data());
     assert(f1.is_open());
     
-    string left_image_r_dir="/media/zzq/SAMSUNG/DataSet/kaist/urban38/urban38-pankyo_img/urban38-pankyo/image/stereo_left/";
-    string left_image_q_dir="/home/zzq/DataSet/kaist/urban39/image/stereo_left/";
+    
     string str,result;
     int line_num=1;
     int match_num=0;
@@ -1597,10 +1340,7 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
     int count=0;
     int add_kf_num=0;
     int nums=0;
-    string keyframe_pose="/tmp/kf_pose.txt";
-    ofstream of;
-    of.open(keyframe_pose.data());
-    assert(of.is_open());
+
     VectorXd intrinsics=params.camera_intrinsics[0];
     string image_name1,image_name2;
     while (getline(f1,str))
@@ -1608,70 +1348,73 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
         
         if(line_num%2==1)  //query_timestamp, keyframe_timestamp, match_number
         {
-        //    stringstream line(str);
-        //    line>>result;
-        // //    cout<<"***"<<result<<endl;
-        //     image_name1=result;
-        //     string image_name_front;
-        //     string image_name_back;
-        //     image_name_front=image_name1.substr(0,10);
-        //     image_name_front=image_name_front+".";
-        //     image_name_back=image_name1.substr(10,2); //2位小数 forkaist 4 for euroc
-        //     string image_name_final1=image_name_front+image_name_back;
-        //     cout<<"image_name_final1: "<<image_name_final1<<endl;
-        //     query_ts=stod(image_name_final1);
-        //     query_timestamps.push_back(query_ts);
-           
-        // //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-        //    line>>result;
-        // //    cout<<"==="<<result<<endl;
-        //     image_name2=result;
-        //     image_name_front=image_name2.substr(0,10);
-        //     image_name_front=image_name_front+".";
-        //     image_name_back=image_name2.substr(10,2);
-        //     string image_name_final2=image_name_front+image_name_back;
-        //      cout<<"image_name_final2: "<<image_name_final2<<endl;
-        //     kf_ts=stod(image_name_final2);
-        // //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-        //    line>>result;
-        //    match_num=stoi(result);
-
-
-           /**** for YQ ****/
-        //    stringstream line(str);
-        //    line>>result;
-        //    //image_name1=result;
-        // //    cout<<"***"<<result<<endl;
-        //    query_ts=stod(result);
-        //    query_ts=round(query_ts*10000)/10000.0;
-        //    query_timestamps.push_back(query_ts);
-        // //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-        //    line>>result;
-        //   // image_name2=result;
-        // //    cout<<"==="<<result<<endl;
-        //    kf_ts=stod(result);
-        //    kf_ts=floor(kf_ts*10)/10.0;  //保留一位小数
-        // //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-        //    line>>result;
-        //    match_num=stoi(result);
-
-        /**** for eight circle****/
+          if(params.used_dataset=="euroc"||params.used_dataset=="kaist"||params.used_dataset=="fourseasons")
+          {
            stringstream line(str);
            line>>result;
-           //image_name1=result;
         //    cout<<"***"<<result<<endl;
-           query_ts=stod(result);
-           query_ts=round(query_ts*100)/100.0;
-           query_timestamps.push_back(query_ts);
-        //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-           line>>result;
-          // image_name2=result;
-        //    cout<<"==="<<result<<endl;
-           kf_ts=stod(result);
-           kf_ts=floor(kf_ts*100)/100.0;  //保留一位小数
+            image_name1=result;
+            string image_name_front;
+            string image_name_back;
+            image_name_front=image_name1.substr(0,10);
+            image_name_front=image_name_front+".";
+            image_name_back= (params.used_dataset=="euroc"||params.used_dataset=="fourseasons")? image_name1.substr(10,4):image_name1.substr(10,2); //2 decimals for kaist, 4 decimals for euroc
+            string image_name_final1=image_name_front+image_name_back;
+            query_ts=stod(image_name_final1);
+            query_timestamps.push_back(query_ts);
+           
+            line>>result;
+
+            image_name2=result;
+            image_name_front=image_name2.substr(0,10);
+            image_name_front=image_name_front+".";
+            image_name_back= (params.used_dataset=="euroc")? image_name2.substr(10,4):image_name2.substr(10,2);
+            string image_name_final2=image_name_front+image_name_back;
+            kf_ts=stod(image_name_final2);
         //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
            line>>result;
            match_num=stoi(result);
+          }
+          else if(params.used_dataset=="YQ")
+          {
+            /**** for YQ ****/
+            stringstream line(str);
+            line>>result;
+
+            query_ts=stod(result);
+            query_ts=round(query_ts*10000)/10000.0;
+            query_timestamps.push_back(query_ts);
+
+            line>>result;
+
+            kf_ts=stod(result);
+            kf_ts=floor(kf_ts*10)/10.0;  //one decimals
+            line>>result;
+            match_num=stoi(result);
+          }
+          else if(params.used_dataset=="sim")
+          {
+            /**** for simulated circle trajectory****/
+            stringstream line(str);
+            line>>result;
+
+            query_ts=stod(result);
+            query_ts=round(query_ts*100)/100.0;
+            query_timestamps.push_back(query_ts);
+
+            line>>result;
+
+            kf_ts=stod(result);
+            kf_ts=floor(kf_ts*100)/100.0;  
+
+            line>>result;
+            match_num=stoi(result);
+          }
+          else
+          {
+            cout<<"the dataset is not supported yet..."<<endl;
+            return;
+          }
            
         }
 
@@ -1743,93 +1486,38 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
 
             cv::Point2f q2d_norm = trackFEATS->undistort_point(q2d, 0);
             cv::Point2f kf2d_norm = trackFEATS->undistort_point(kf2d, 0);
-            
-            // pt_c(0)=fx*pt_c(0)+cx;
-            // pt_c(1)=fy*pt_c(1)+cy;        
+           
+            bool q2d_is_exist=false;
+            bool kf2d_is_exist=false;
+            for(int k=0;k<match_points.size();k++)
+            {
+                if(match_points[k]==q2d)
+                {
+                    q2d_is_exist=true;
+                    break;
+                }
+            }
+            for(int k=0;k<kf_points.size();k++)
+            {
+                if(kf_points[k]==kf2d)
+                {
+                    kf2d_is_exist=true;
+                }
+            }
+            if(q2d_is_exist==false&&kf2d_is_exist==false)
+            {
+              match_points.push_back(q2d);
+              match_points_norm.push_back(q2d_norm);
+              kf_points.push_back(kf2d);
+              kf_points_norm.push_back(kf2d_norm);
+              kf3d_points.push_back(kf3d);
+              
+            }
 
-                        // Calculate distorted coordinates for fisheye
-                        // double r = std::sqrt(pt_c(0)*pt_c(0)+pt_c(1)*pt_c(1));
-                        // double theta = std::atan(r);
-                        // double theta_d = theta+k1*std::pow(theta,3)+k2*std::pow(theta,5)+k3*std::pow(theta,7)+k4*std::pow(theta,9);
-
-                        // // Handle when r is small (meaning our xy is near the camera center)
-                        // double inv_r = (r > 1e-8)? 1.0/r : 1.0;
-                        // double cdist = (r > 1e-8)? theta_d * inv_r : 1.0;
-
-                        // // Calculate distorted coordinates for fisheye
-                        // double x1 = pt_c(0)*cdist;
-                        // double y1 = pt_c(1)*cdist;
-                        // pt_c(0) = fx*x1 + cx;
-                        // pt_c(1) = fy*y1 + cy;
-
-                        
-               
-            //    if(abs(pt_c(0)-kf2d.x)<2&&abs(pt_c(1)-kf2d.y)<2)
-               {
-                   bool q2d_is_exist=false;
-                   bool kf2d_is_exist=false;
-                   for(int k=0;k<match_points.size();k++)
-                   {
-                       if(match_points[k]==q2d)
-                       {
-                           q2d_is_exist=true;
-                           break;
-                       }
-                   }
-                   for(int k=0;k<kf_points.size();k++)
-                   {
-                       if(kf_points[k]==kf2d)
-                       {
-                           kf2d_is_exist=true;
-                       }
-                   }
-                   if(q2d_is_exist==false&&kf2d_is_exist==false)
-                   {
-                     match_points.push_back(q2d);
-                     match_points_norm.push_back(q2d_norm);
-                     kf_points.push_back(kf2d);
-                     kf_points_norm.push_back(kf2d_norm);
-                     kf3d_points.push_back(kf3d);
-                     
-                   }
-                 
-               }
            }
            if(match_points.size()>params.match_num_thred)
            {
-                 nums++;
-                //  cv::Mat image_r=cv::imread(left_image_r_dir+image_name2,0);
-                //  cv::Mat image_q=cv::imread(left_image_q_dir+image_name1,0);
-                //  vector<cv::KeyPoint> pts_r;
-                //  vector<cv::KeyPoint> pts_q;
-                //  for(int p_num=0;p_num<match_points.size();p_num++)
-                //  {
-                //        cv::KeyPoint kp_r;
-                //        kp_r.pt=kf_points[p_num];
-                //        pts_r.push_back(kp_r);
-                //        cv::KeyPoint kp_q;
-                //        kp_q.pt=match_points[p_num];
-                //        kp_q.pt.x+=image_r.cols;
-                //        pts_q.push_back(kp_q);
-                       
-                //  }
-                 
-                //  cv::Mat pair_image;
-                //  cv::hconcat(image_r,image_q,pair_image);
-                //  cv::Mat pair_image_color;
-                //  cv::cvtColor(pair_image,pair_image_color,cv::COLOR_GRAY2BGR);
-                //  for(int p_num=0;p_num<match_points.size();p_num++)
-                //     {
-
-                            
-                //         cv::circle(pair_image_color,pts_r[p_num].pt,2,cv::Scalar(255,0,0));
-                //         cv::circle(pair_image_color,pts_q[p_num].pt,2,cv::Scalar(0,255,255));
-                //         cv::line(pair_image_color,pts_r[p_num].pt,pts_q[p_num].pt,cv::Scalar(0,255,0),1);
-                //         // cv::imshow("pair",pair_image_color);
-                //     }
-                //     cv::imshow("pair",pair_image_color);
-                //     cv::waitKey();  
-
+                nums++;
            }
            kf->matched_point_2d_uv_map.insert({query_ts,match_points});
            kf->matched_point_2d_norm_map.insert({query_ts,match_points_norm});
@@ -1841,11 +1529,6 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
            kf->image_name=image_name2;
            kf->time_stamp=kf_ts;
            kf->loop_img_timestamp_vec.push_back(query_ts);
-           
-
-        //    cout<<"kf_ts: "<<to_string(kf->time_stamp)<<endl;
-        //    kf->loop_img_timestamp=round(query_ts*10000)/10000.0;
-        //    cout<<"query_ts: "<<to_string(kf->loop_img_timestamp)<<endl;
            
 
            f2.open(file_pose.data());
@@ -1864,13 +1547,23 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
                     line1>>res1;
                     double ts=stod(res1);
                     double timestp=ts;
-                    ts=floor(ts*100)/100.0; //保留2位小数for kaist and eight circle, 4 for euroc
-                    // /**for YQ**/
-                    // stringstream line1(str1);
-                    // line1>>res1;
-                    // double ts=stod(res1);
-                    // double timestp=ts;
-                    // ts=floor(ts*10)/10.0; //保留一位小数
+                    if(params.used_dataset=="euroc"||params.used_dataset=="fourseasons")
+                    {
+                      ts=floor(ts*10000)/10000.0; 
+                    }
+                    else if(params.used_dataset=="kaist"||params.used_dataset=="sim")
+                    {
+                      ts=floor(ts*100)/100.0;
+                    }
+                    else if(params.used_dataset=="YQ")
+                    {
+                      stringstream line1(str1);
+                      line1>>res1;
+                      double ts=stod(res1);
+                      double timestp=ts;
+                      ts=floor(ts*10)/10.0; 
+                    }
+
                     if(ts==kf->time_stamp)
                     {
                         line1>>res1;
@@ -1912,14 +1605,12 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
                         cout<<"get keyframe pose"<<endl;
                         get_pose=true;
                         count++;
-                        of<<to_string(timestp)<<" "<<to_string(tx)<<" "<<to_string(ty)<<" "<<to_string(tz)<<" "<<to_string(qx)<<" "<<to_string(qy)<<" "<<to_string(qz)<<" "<<to_string(qw)<<endl;
                         break;
                     }
 
                 }
            }
            f2.close();
-        //    cout<<"kf->intrinsics "<<kf->_intrinsics.transpose()<<endl;  
 
            //add curkf into keyframe database
            if(new_kf&&get_pose&&kf->matched_point_2d_uv_map.at(query_ts).size()>0)
@@ -1931,9 +1622,6 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
            {
              max_kf_id--;
            }
-        //    cout<<"load the "<<max_kf_id<<"th kf with timestamp: "<<kf->time_stamp<<endl;
-        //    cout<<"num matches: "<<match_num<<" "<<kf->matched_point_2d_uv.size()<<" "<<kf->point_2d_uv.size()<<" "<<kf->point_3d.size()<<endl;
-
         }
         line_num++;
     }
@@ -1944,468 +1632,10 @@ void VioManager::loadPoseGraph2(std::string map_save_path, std::string pose_grap
     max_kf_id_in_database=max_kf_id;
     f1.close();
     t2=boost::posix_time::microsec_clock::local_time();
-    printf("load pose graph time: %f s\n", (t2-t1).total_microseconds() * 1e-6);
-
-}
-
-void VioManager::loadPoseGraph3(std::string map_save_path, std::string pose_graph_filename, std::string keyframe_pose_filename)
-{
-     boost::posix_time::ptime t1,t2;
-    t1 = boost::posix_time::microsec_clock::local_time();
-    max_kf_id=-1;
-
-    ifstream f1,f2;
-    string file_match = map_save_path + pose_graph_filename;
-    string file_pose = map_save_path + keyframe_pose_filename;
-
-    printf("load matches from: %s \n", file_match.c_str());
-    printf("load keyframe pose from: %s \n", file_pose.c_str());
-    printf("loading...\n");
-
-    f1.open(file_match.data());
-    assert(f1.is_open());
-    
-    string left_image_r_dir="/media/zzq/SAMSUNG/DataSet/kaist/urban38/urban38-pankyo_img/urban38-pankyo/image/stereo_left/";
-    string left_image_q_dir="/home/zzq/DataSet/kaist/urban39/image/stereo_left/";
-    string str,result;
-    int line_num=0;
-    int match_num=0;
-    double query_ts,kf_ts;
-    int count=0;
-    int add_kf_num=0;
-    int nums=0;
-    string keyframe_pose="/tmp/kf_pose.txt";
-    ofstream of;
-    of.open(keyframe_pose.data());
-    assert(of.is_open());
-    VectorXd intrinsics=params.camera_intrinsics[0];
-    int is_fisheye=params.camera_fisheye[0];
-    string image_name1,image_name2;
-    int match_num_per_img=0;
-    int total_line_num_per_img=0;
-    while (getline(f1,str))
-    {
-        
-        if(line_num==0)
-        {
-            stringstream line(str);
-            line>>result; //query_timestamp
-            line>>result; //match_num_per_img
-            match_num_per_img=stoi(result);
-            total_line_num_per_img=2*match_num_per_img;
-            line_num++;
-            continue;
-        }
-        if(line_num<=total_line_num_per_img)
-        {
-            if(line_num%2==1)//query_timestamp, keyframe_timestamp, match_number
-            {
-            //     stringstream line(str);
-            //     line>>result;
-            // //    cout<<"***"<<result<<endl;
-            //     image_name1=result;
-            //     string image_name_front;
-            //     string image_name_back;
-            //     image_name_front=image_name1.substr(0,10);
-            //     image_name_front=image_name_front+".";
-            //     image_name_back=image_name1.substr(10,2); //2位小数 forkaist 4 for euroc
-            //     string image_name_final1=image_name_front+image_name_back;
-            //     cout<<"image_name_final1: "<<image_name_final1<<endl;
-            //     query_ts=stod(image_name_final1);
-            //     query_timestamps.push_back(query_ts);
-            
-            // //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-            //     line>>result;
-            // //    cout<<"==="<<result<<endl;
-            //     image_name2=result;
-            //     image_name_front=image_name2.substr(0,10);
-            //     image_name_front=image_name_front+".";
-            //     image_name_back=image_name2.substr(10,2);
-            //     string image_name_final2=image_name_front+image_name_back;
-            //     cout<<"image_name_final2: "<<image_name_final2<<endl;
-            //     kf_ts=stod(image_name_final2);
-            // //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-            //     line>>result;
-            //     match_num=stoi(result);
-
-
-            /**** for YQ ****/
-               stringstream line(str);
-               line>>result;
-            //    cout<<"***"<<result<<endl;
-               query_ts=stod(result);
-               query_ts=round(query_ts*10000)/10000.0;
-               query_timestamps.push_back(query_ts);
-            //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-               line>>result;
-            //    cout<<"==="<<result<<endl;
-               kf_ts=stod(result);
-               kf_ts=floor(kf_ts*10)/10.0;  //保留一位小数
-            //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-               line>>result;
-               match_num=stoi(result);
-
-            /**** for eight circle****/
-        //    stringstream line(str);
-        //    line>>result;
-        //    //image_name1=result;
-        // //    cout<<"***"<<result<<endl;
-        //    query_ts=stod(result);
-        //    query_ts=round(query_ts*100)/100.0;
-        //    query_timestamps.push_back(query_ts);
-        // //    cout<<"***query_ts"<<to_string(query_ts)<<endl;
-        //    line>>result;
-        //   // image_name2=result;
-        // //    cout<<"==="<<result<<endl;
-        //    kf_ts=stod(result);
-        //    kf_ts=floor(kf_ts*100)/100.0;  //保留一位小数
-        // //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
-        //    line>>result;
-        //    match_num=stoi(result);
-           
-           
-            }
-            else if(line_num%2==0)//{q2d.x,q2d.y,kf2d.x,kf2d.y,kf3d.x,kf3d.y,kf3d.z} ...  
-            {
-                Keyframe* kf=nullptr;
-                kf=state->get_kfdataBase()->get_keyframe(kf_ts);
-                bool new_kf=false;
-                if(kf==nullptr)
-                {
-                    cout<<"this is the new keyframe"<<endl;
-                    kf=new Keyframe();
-                    max_kf_id++;
-                    kf->index=max_kf_id;
-                    kf->cam_id=0;  //kf is from left cam
-                    intrinsics.conservativeResize(9,1);
-                    intrinsics(8)=is_fisheye;  //is fisheye or not
-                    kf->_intrinsics=intrinsics; 
-                    new_kf=true;
-                }
-                stringstream line(str);
-                cout<<"match num:"<<match_num<<endl;
-                vector<cv::Point2f> match_points,match_points_norm,kf_points,kf_points_norm;
-                vector<cv::Point3f> kf3d_points;
-                
-                for(int i=0;i<match_num;i++)
-                {
-                    cv::Point2f q2d,kf2d,projectkf2d;
-                    cv::Point3f kf3d;
-                    line>>result;
-                    //    cout<<"uv_x: "<<result<<" ";
-                    q2d.x=stof(result);
-                    //    cout<<"uv_x load: "<<q2d.x<<endl;
-                    line>>result;
-                    //    cout<<"uv_y: "<<result<<" ";
-                    q2d.y=stof(result);
-                    //    cout<<"uv_y load: "<<q2d.y<<endl;
-                    line>>result;
-                    //    cout<<"kuv_x: "<<result<<" ";
-                    kf2d.x=stof(result);
-                    //    cout<<"kuv_x load: "<<kf2d.x<<endl;
-                    line>>result;
-                    //    cout<<"kuv_y: "<<result<<" ";
-                    kf2d.y=stof(result);
-                    //    cout<<"kuv_y load: "<<kf2d.y<<endl;
-                    line>>result;
-                    //    cout<<"k3d_x: "<<result<<" ";
-                    kf3d.x=stof(result);
-                    //    cout<<"k3d_x load: "<<kf3d.x<<endl;
-                    line>>result;
-                    //    cout<<"k3d_y: "<<result<<" ";
-                    kf3d.y=stof(result);
-                    //    cout<<"k3d_y load: "<<kf3d.y<<endl;
-                    line>>result;
-                    //    cout<<"k3d_z: "<<result<<" ";
-                    kf3d.z=stof(result);
-                    //    cout<<"k3d_z load: "<<kf3d.z<<endl;
-                    Eigen::Vector3d pt_c(0,0,1);
-                    pt_c(0)=kf3d.x/kf3d.z;
-                    pt_c(1)=kf3d.y/kf3d.z;
-                    double fx=intrinsics(0);
-                    double fy=intrinsics(1);
-                    double cx=intrinsics(2);
-                    double cy=intrinsics(3);
-                    double k1=intrinsics(4);
-                    double k2=intrinsics(5);
-                    double k3=intrinsics(6);
-                    double k4=intrinsics(7);   
-
-                    cv::Point2f q2d_norm = trackFEATS->undistort_point(q2d, 0);
-                    cv::Point2f kf2d_norm = trackFEATS->undistort_point(kf2d, 0);
-                    
-                    // pt_c(0)=fx*pt_c(0)+cx;
-                    // pt_c(1)=fy*pt_c(1)+cy;        
-
-                                // Calculate distorted coordinates for fisheye
-                                // double r = std::sqrt(pt_c(0)*pt_c(0)+pt_c(1)*pt_c(1));
-                                // double theta = std::atan(r);
-                                // double theta_d = theta+k1*std::pow(theta,3)+k2*std::pow(theta,5)+k3*std::pow(theta,7)+k4*std::pow(theta,9);
-
-                                // // Handle when r is small (meaning our xy is near the camera center)
-                                // double inv_r = (r > 1e-8)? 1.0/r : 1.0;
-                                // double cdist = (r > 1e-8)? theta_d * inv_r : 1.0;
-
-                                // // Calculate distorted coordinates for fisheye
-                                // double x1 = pt_c(0)*cdist;
-                                // double y1 = pt_c(1)*cdist;
-                                // pt_c(0) = fx*x1 + cx;
-                                // pt_c(1) = fy*y1 + cy;
-
-                                
-                    
-                    //    if(abs(pt_c(0)-kf2d.x)<2&&abs(pt_c(1)-kf2d.y)<2)
-                    
-                        bool q2d_is_exist=false;
-                        bool kf2d_is_exist=false;
-                        for(int k=0;k<match_points.size();k++)
-                        {
-                            if(match_points[k]==q2d)
-                            {
-                                q2d_is_exist=true;
-                                break;
-                            }
-                        }
-                        for(int k=0;k<kf_points.size();k++)
-                        {
-                            if(kf_points[k]==kf2d)
-                            {
-                                kf2d_is_exist=true;
-                            }
-                        }
-                        if(q2d_is_exist==false&&kf2d_is_exist==false)
-                        {
-                            match_points.push_back(q2d);
-                            match_points_norm.push_back(q2d_norm);
-                            kf_points.push_back(kf2d);
-                            kf_points_norm.push_back(kf2d_norm);
-                            kf3d_points.push_back(kf3d);
-                            
-                        }
-                        
-                    
-                }
-                if(match_points.size()>params.match_num_thred)
-                {
-                        nums++;
-                        //  cv::Mat image_r=cv::imread(left_image_r_dir+image_name2,0);
-                        //  cv::Mat image_q=cv::imread(left_image_q_dir+image_name1,0);
-                        //  vector<cv::KeyPoint> pts_r;
-                        //  vector<cv::KeyPoint> pts_q;
-                        //  for(int p_num=0;p_num<match_points.size();p_num++)
-                        //  {
-                        //        cv::KeyPoint kp_r;
-                        //        kp_r.pt=kf_points[p_num];
-                        //        pts_r.push_back(kp_r);
-                        //        cv::KeyPoint kp_q;
-                        //        kp_q.pt=match_points[p_num];
-                        //        kp_q.pt.x+=image_r.cols;
-                        //        pts_q.push_back(kp_q);
-                            
-                        //  }
-                        
-                        //  cv::Mat pair_image;
-                        //  cv::hconcat(image_r,image_q,pair_image);
-                        //  cv::Mat pair_image_color;
-                        //  cv::cvtColor(pair_image,pair_image_color,cv::COLOR_GRAY2BGR);
-                        //  for(int p_num=0;p_num<match_points.size();p_num++)
-                        //     {
-
-                                    
-                        //         cv::circle(pair_image_color,pts_r[p_num].pt,2,cv::Scalar(255,0,0));
-                        //         cv::circle(pair_image_color,pts_q[p_num].pt,2,cv::Scalar(0,255,255));
-                        //         cv::line(pair_image_color,pts_r[p_num].pt,pts_q[p_num].pt,cv::Scalar(0,255,0),1);
-                        //         // cv::imshow("pair",pair_image_color);
-                        //     }
-                        //     cv::imshow("pair",pair_image_color);
-                        //     cv::waitKey();  
-
-                }
-                kf->matched_point_2d_uv_map.insert({query_ts,match_points});
-                kf->matched_point_2d_norm_map.insert({query_ts,match_points_norm});
-                kf->point_2d_uv_map.insert({query_ts,kf_points});
-                kf->point_2d_uv_norm_map.insert({query_ts,kf_points_norm});
-                kf->point_3d_map.insert({query_ts,kf3d_points});
-                kf->point_3d_linp_map.insert({query_ts,kf3d_points});
-
-
-                kf->time_stamp=kf_ts;
-                kf->loop_img_timestamp_vec.push_back(query_ts);
-                kf->image_name=image_name2;
-                
-
-                //    cout<<"kf_ts: "<<to_string(kf->time_stamp)<<endl;
-                //    kf->loop_img_timestamp=round(query_ts*10000)/10000.0;
-                //    cout<<"query_ts: "<<to_string(kf->loop_img_timestamp)<<endl;
-                
-
-                f2.open(file_pose.data());
-                assert(f2.is_open());
-                string str1,res1;
-                bool get_pose=false;
-                if(!new_kf)
-                {
-                    get_pose=true;
-                }
-                else
-                {
-                        while(getline(f2,str1))  //timestamp,tx,ty,tz,qx,qy,qz,qw
-                        {
-                            // stringstream line1(str1);
-                            // line1>>res1;
-                            // double ts=stod(res1);
-                            // double timestp=ts;
-                            // ts=floor(ts*100)/100.0; //保留2位小数for kaist and eight circle. 4 for euroc
-                            /**for YQ**/
-                            stringstream line1(str1);
-                            line1>>res1;
-                            double ts=stod(res1);
-                            double timestp=ts;
-                            ts=floor(ts*10)/10.0; //保留一位小数
-                            if(ts==kf->time_stamp)
-                            {
-                                line1>>res1;
-                                //  cout<<"tx read: "<<res1<<" ";
-                                float tx=atof(res1.c_str());
-                                //  cout<<"tx load: "<<tx<<endl;
-                                line1>>res1;
-                                //  cout<<"ty read: "<<res1<<" ";
-                                float ty=atof(res1.c_str());
-                                //  cout<<"ty load: "<<ty<<endl;
-                                line1>>res1;
-                                //  cout<<"tz read: "<<res1<<" ";
-                                float tz=atof(res1.c_str());
-                                //  cout<<"tz load: "<<tz<<endl;
-                                line1>>res1;
-                                //  cout<<"qx read: "<<res1<<" ";
-                                float qx=atof(res1.c_str());
-                                //  cout<<"qx load: "<< qx <<endl;
-                                line1>>res1;
-                                //  cout<<"qy read: "<<res1<<" ";
-                                float qy=atof(res1.c_str());
-                                //  cout<<"qy load: "<<qy<<endl;
-                                line1>>res1;
-                                //  cout<<"qz read: "<<res1<<" ";
-                                float qz=atof(res1.c_str());
-                                //  cout<<"qz load: "<<qz<<endl;
-                                line1>>res1;
-                                //  cout<<"qw read: "<<res1<<" ";
-                                float qw=atof(res1.c_str());
-                                //  cout<<"qw load: "<<qw<<endl;
-                                //here we load the quaternion in the form of Hamilton,we need to tranform it into JPL
-                                Quaterniond q1(qw,qx,qy,qz);  
-                                Quaterniond q1_JPL(q1.toRotationMatrix().transpose());
-                                Eigen::Matrix<double,7,1> q_kfInw;
-                                q_kfInw<<q1_JPL.x(),q1_JPL.y(),q1_JPL.z(),q1_JPL.w(),tx, ty, tz;
-                                kf->_Pose_KFinWorld->set_value(q_kfInw);
-                                cout<<"get keyframe pose"<<endl;
-                                get_pose=true;
-                                count++;
-                                of<<to_string(timestp)<<" "<<to_string(tx)<<" "<<to_string(ty)<<" "<<to_string(tz)<<" "<<to_string(qx)<<" "<<to_string(qy)<<" "<<to_string(qz)<<" "<<to_string(qw)<<endl;
-                                break;
-                            }
-
-                        }
-                }
-                f2.close();
-                //    cout<<"kf->intrinsics "<<kf->_intrinsics.transpose()<<endl;  
-
-                //add curkf into keyframe database
-                if(new_kf&&get_pose&&kf->matched_point_2d_uv_map.at(query_ts).size()>0)
-                {
-                    state->insert_keyframe_into_database(kf);
-                    add_kf_num++;
-                }
-                else if(new_kf&&!get_pose)
-                {
-                  max_kf_id--;
-                }
-                //    cout<<"load the "<<max_kf_id<<"th kf with timestamp: "<<kf->time_stamp<<endl;
-                //    cout<<"num matches: "<<match_num<<" "<<kf->matched_point_2d_uv.size()<<" "<<kf->point_2d_uv.size()<<" "<<kf->point_3d.size()<<endl;
-
-            }
-            if(line_num==total_line_num_per_img)
-            {
-                line_num=0;
-            }
-            else
-            {
-                line_num++;
-            }
-            
-        }
-    }    
-        
-
-    cout<<"count: "<<count<<" add_kf_num: "<<add_kf_num<<endl;
-    cout<<"kfdb size: "<<state->get_kfdataBase()->get_internal_data().size()<<endl;
-    assert(add_kf_num==state->get_kfdataBase()->get_internal_data().size());
-    cout<<"match num > macth num thred: "<<nums<<endl;
-    max_kf_id_in_database=max_kf_id;
-    f1.close();
-    t2=boost::posix_time::microsec_clock::local_time();
-    printf("load pose graph time: %f s\n", (t2-t1).total_microseconds() * 1e-6);
-    sleep(2);
-
+    printf("load matching info time: %f s\n", (t2-t1).total_microseconds() * 1e-6);
 }
 
 
-
-
-void VioManager::loadKeyframe(Keyframe *cur_kf, bool flag_detect_loop) {
-
-//    cout<<"in load keyframe"<<endl;
-    // addKeyFrameIntoVoc(cur_kf);
-//    cout<<"finish addKeyframe into voc"<<endl;
-
-//    state->kfdatabase->mtx.lock();
-//    cout<<"before insert "<<endl;
-    // state->insert_keyframe_into_database(cur_kf);
-//    state->kfdatabase->get_internal_data().insert({cur_kf->index,cur_kf});
-    //cout<<"state->kfdatabase .size: "<<state->get_kfdataBase()->get_internal_data().size()<<endl;
-    //publish();
-//    cout<<"after insert"<<endl;
-//    state->kfdatabase->mtx.unlock();
-//    cout<<"after mtx.unlock()"<<endl;
-}
-
-
-
-void VioManager::get_image_features(double timestamp, size_t cam_id, vector<cv::Point2f> &uv,
-                                    vector<cv::Point2f> &uv_norm,vector<size_t>& feas_id){
-    std::vector<Feature*> features;
-    features = trackFEATS->get_feature_database()->features_containing(timestamp);
-    auto iter1=features.begin();
-    while(iter1!=features.end())
-    {
-        auto t1=(*iter1)->timestamps[cam_id].begin();
-        auto t2=(*iter1)->uvs[cam_id].begin();
-        auto t3=(*iter1)->uvs_norm[cam_id].begin();
-        while(t1!=(*iter1)->timestamps[cam_id].end())
-        {
-            if((*t1)==timestamp)
-            {
-                cv::Point2f _uv,_uv_norm;
-                _uv.x=(*t2)(0);
-                _uv.y=(*t2)(1);
-                _uv_norm.x=(*t3)(0);
-                _uv_norm.y=(*t3)(1);
-                uv.emplace_back(_uv);
-                uv_norm.emplace_back(_uv_norm);
-                feas_id.emplace_back((*iter1)->featid);
-                break;
-            }
-            else
-            {
-              t1++;
-              t2++;
-              t3++;
-            }
-        }
-        iter1++;
-    }
-
-}
 
 
 
@@ -2420,11 +1650,6 @@ bool VioManager::ComputeRelativePose(Keyframe *cur_kf, Keyframe *loop_kf,Vector3
     Vector3d p_I_in_G=state->_imu->pos();
     Vector3d p_I_in_C= state->_calib_IMUtoCAM[cur_kf->cam_id]->pos();
     Vector3d p_kf_in_G=p_I_in_G-R_kf_to_G*p_I_in_C; //p_cinG=p_iinG+p_icinG=p_iinG-p_ciinG=p_iinG-R_ctoG*p_ciinc;
-
-//
-//    Matrix3d R_kf_to_G=cur_kf->_Pose_KFinWorld->Rot();
-//    Vector3d p_kf_in_G=cur_kf->_Pose_KFinWorld->pos();
-//    cout<<"get cur_kf_pose"<<endl;
 
 
     //set the current image pose in keyframe class
@@ -2463,11 +1688,7 @@ bool VioManager::ComputeRelativePose(Keyframe *cur_kf, Keyframe *loop_kf,Vector3
 
     cout<<"R_GtoM: "<<endl<<map_ref_R_cur_vio<<endl<<"p_GinM: "<<map_ref_p_cur_vio.transpose()<<endl;
 
-    //Now we get the pose from vio to map!
-//    state->p_vio_in_map.insert({cur_kf->time_stamp,map_ref_p_cur_vio});
-//    state->R_vio_to_map.insert({cur_kf->time_stamp,map_ref_R_cur_vio});
-    // map_ref_p_cur_vio=Vector3d::Zero();
-    // map_ref_R_cur_vio=Matrix3d::Identity();
+
 
     Matrix<double,4,1> q_vio_to_map=rot_2_quat(map_ref_R_cur_vio);
     Matrix<double,7,1> pose_vio_to_map;
@@ -2479,25 +1700,7 @@ bool VioManager::ComputeRelativePose(Keyframe *cur_kf, Keyframe *loop_kf,Vector3
     // Vector3d p_map_in_vio(0,0,0);
     Matrix<double,7,1> pose_map_to_vio;
     pose_map_to_vio<<q_map_to_vio,p_map_in_vio;
-    cout<<"pnp relative pose: "<<pose_map_to_vio.transpose()<<endl;
-    cout<<"error_p: "<<p_map_in_vio.transpose()<<endl;
-    Matrix3d R_GtoL_true = Matrix3d::Zero();
-    R_GtoL_true<<0,0,-1,0,1,0,1,0,0;
-    Matrix3d R_GtoL = quat_2_Rot(q_map_to_vio);
-    // Quaterniond q_hamilton_true(0.707107,0,-0.707107,0);
 
-    // Matrix<double,4,1> q_true = rot_2_quat(q_hamilton_true.toRotationMatrix().transpose());
-    // q_true<<0,0,0,1;
-    // Vector3d error_q = compute_error(q_true,q_map_to_vio);
-    Vector3d error_R = log_so3(R_GtoL_true * R_GtoL.transpose());
-    cout<<"error_R: "<<error_R.transpose()<<endl;
-    Vector3d error_p = p_map_in_vio;
-    cout<<"error_p: "<<error_p.transpose()<<endl;
-    // sleep(10);
-
-    // pose_map_to_vio<<0,0,0,1,0.01,0.01,0.01;
-    // Matrix<double,7,1> pose_vio_to_map;
-    // pose_vio_to_map<<0,0,0,1,0.01,0.01,0.01;
     
     if(map_initialized==false)  //initialized the relative pose between vins and map
     {
@@ -2507,21 +1710,12 @@ bool VioManager::ComputeRelativePose(Keyframe *cur_kf, Keyframe *loop_kf,Vector3
             state->set_transform=true;
             return true;
         }
-        // if(StateHelper::reset_map_transformation(state,pose_vio_to_map))
-        // {
-        //     state->set_transform=true;
-        //      map_initialized=true;
-        //      return true;
-        // }
         
     }
     else if(map_initialized==true)  //it has been a long-time from last_kf_match_time, we recompute the relative pose between vins and map
     {
-    //    reset_map_count++;
-    //    duration=state->_timestamp-last_kf_match_time;
        state->transform_map_to_vio->set_linp(pose_map_to_vio);
        return true;
-    //    return StateHelper::reset_map_transformation(state,pose_vio_to_map);
     }
     
     
@@ -2550,18 +1744,6 @@ bool VioManager::ComputeRelativePoseWithCov(Keyframe *cur_kf, Keyframe *loop_kf,
     Matrix<double,7,1> pose_GtoL;
     pose_GtoL<<q_GtoL,p_GinL;
 
-
-    Matrix3d R_GtoL_true = Matrix3d::Zero();
-    R_GtoL_true<<0,0,-1,0,1,0,1,0,0;
-    // Quaterniond q_hamilton_true(0.707107,0,-0.707107,0);
-
-    // Matrix<double,4,1> q_true = rot_2_quat(q_hamilton_true.toRotationMatrix().transpose());
-    // q_true<<0,0,0,1;
-    // Vector3d error_q = compute_error(q_true,q_map_to_vio);
-    Vector3d error_R = log_so3(R_GtoL_true * R_GtoL.transpose());
-    cout<<"error_R: "<<error_R.transpose()<<endl;
-    Vector3d error_p = p_GinL;
-    cout<<"error_p: "<<error_p.transpose()<<endl;
 
     if(StateHelper::add_map_transformation(state,pose_GtoL))
     {
@@ -2597,14 +1779,7 @@ bool VioManager::ComputeRelativePoseWithCov(Keyframe *cur_kf, Keyframe *loop_kf,
           int id_trans = state->transform_map_to_vio->id();
 
           state->_Cov.block(id_trans,id_trans,6,6) = 1* Cov_new.block(12,12,6,6);
-          // state->_Cov.block(id_imu_pose,id_trans,6,6) = Cov_new.block(0,12,6,6);
-          // state->_Cov.block(id_trans,id_imu_pose,6,6) = Cov_new.block(12,0,6,6);
-          // state->_Cov.block(id_clone_pose,id_trans,6,6) = Cov_new.block(0,12,6,6);
-          // state->_Cov.block(id_trans,id_clone_pose,6,6) = Cov_new.block(12,0,6,6);
-          // state->_Cross_Cov_AN.block(id_trans,id_KF,6,6) = Cov_new.block(12,6,6,6);
 
-          cout<<"transform cov: "<<endl<<Cov_new.block(12,12,6,6)<<endl;
-          cout<<"transform imu_trans_cross cov: "<<endl<<Cov_new.block(0,12,6,6);
         }
         else
         {
@@ -2631,12 +1806,6 @@ bool VioManager::ComputeRelativePoseWithCov(Keyframe *cur_kf, Keyframe *loop_kf,
           int id_trans = state->transform_map_to_vio->id();
 
           state->_Cov.block(id_trans,id_trans,6,6) = 1* Cov_new.block(6,6,6,6);
-          // state->_Cov.block(id_imu_pose,id_trans,6,6) = Cov_new.block(0,12,6,6);
-          // state->_Cov.block(id_trans,id_imu_pose,6,6) = Cov_new.block(12,0,6,6);
-          // state->_Cov.block(id_clone_pose,id_trans,6,6) = Cov_new.block(0,12,6,6);
-          // state->_Cov.block(id_trans,id_clone_pose,6,6) = Cov_new.block(12,0,6,6);
-          // state->_Cross_Cov_AN.block(id_trans,id_KF,6,6) = Cov_new.block(12,6,6,6);
-
 
         }
           
@@ -2645,12 +1814,7 @@ bool VioManager::ComputeRelativePoseWithCov(Keyframe *cur_kf, Keyframe *loop_kf,
         return true;
     }
     
-    
 
-    
-   
-    
-    
     return false;
 
 }
@@ -2661,7 +1825,6 @@ bool VioManager::ComputeRelativePoseWithCov(Keyframe *cur_kf, Keyframe *loop_kf,
 bool VioManager::ComputeRelativePose2(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur) {
     //get the current image pose in current vio system reference
 
-    
     
     Matrix3d R_vio_to_map= state->transform_map_to_vio->Rot_linp().transpose();
     Vector3d p_vio_in_map= - R_vio_to_map * state->transform_map_to_vio->pos_linp();
@@ -2683,7 +1846,7 @@ bool VioManager::ComputeRelativePose2(Keyframe *cur_kf, Keyframe *loop_kf,Vector
     Matrix3d R_kftoI = R_C_to_I * R_loopTocur;
     Vector3d p_map_in_I = p_kf_in_I + R_kftoI * p_map_in_kf;
 
-    // Matrix3d R_I_to_map= R_kf_to_map * R_loopTocur.transpose() * R_C_to_I.transpose();
+
     Vector3d p_I_in_vio= R_vio_to_map.transpose()*(p_I_in_map-p_vio_in_map);
 
     Vector4d q_vio_to_I = rot_2_quat(R_vio_to_I);
@@ -2699,343 +1862,6 @@ bool VioManager::ComputeRelativePose2(Keyframe *cur_kf, Keyframe *loop_kf,Vector
 }
 
 
-bool VioManager::ComputeRelativePose3(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur) {
-    //transform postion and current rotation.
-
-    
-    
-    Matrix3d R_vio_to_map= state->transform_vio_to_map->Rot();
-    Vector3d p_vio_in_map= state->transform_vio_to_map->pos();
-
-    Matrix3d R_kf_to_map= loop_kf->_Pose_KFinWorld->Rot();
-    Vector3d p_kf_in_map= loop_kf->_Pose_KFinWorld->pos();
-
-    Matrix3d R_C_to_I=state->_calib_IMUtoCAM[cur_kf->cam_id]->Rot().transpose();
-    Vector3d p_C_in_I=-R_C_to_I*state->_calib_IMUtoCAM[cur_kf->cam_id]->pos();
-
-    Matrix3d R_vio_to_I= R_C_to_I * R_loopTocur * R_kf_to_map.transpose() * R_vio_to_map;
-
-    Vector3d p_kf_in_I = p_C_in_I + R_C_to_I*p_loopIncur;;
-    Vector3d p_map_in_kf= - R_kf_to_map.transpose() * p_kf_in_map;
-
-    Matrix3d R_I_to_map = R_kf_to_map * R_loopTocur.transpose() * R_C_to_I.transpose();
-    Vector3d p_I_in_map= p_kf_in_map - R_I_to_map * p_kf_in_I;
-
-    Matrix3d R_kftoI = R_C_to_I * R_loopTocur;
-    Vector3d p_map_in_I = p_kf_in_I + R_kftoI * p_map_in_kf;
-
-    // Matrix3d R_I_to_map= R_kf_to_map * R_loopTocur.transpose() * R_C_to_I.transpose();
-    Vector3d p_I_in_vio= state->_clones_IMU.at(state->_timestamp)->pos();
-
-    Vector4d q_vio_to_I = rot_2_quat(R_vio_to_I);
-    Matrix<double,7,1> pose_cur;
-    pose_cur<<q_vio_to_I(0),q_vio_to_I(1),q_vio_to_I(2),q_vio_to_I(3),p_I_in_vio(0),p_I_in_vio(1),p_I_in_vio(2);
-    
-    state->_clones_IMU.at(state->_timestamp)->set_linp(pose_cur);
-
-
-    Matrix3d cur_vio_R_cur_I= state->_clones_IMU.at(state->_timestamp)->Rot().transpose();
-    Matrix3d cur_vio_R_cur_kf = cur_vio_R_cur_I*R_C_to_I;
-    Vector3d cur_vio_p_cur_kf = p_I_in_vio + cur_vio_R_cur_I*p_C_in_I;
-    Matrix3d map_ref_R_loop_kf;
-    Vector3d map_ref_p_loop_kf;
-    map_ref_R_loop_kf=loop_kf->_Pose_KFinWorld->Rot();
-    map_ref_p_loop_kf=loop_kf->_Pose_KFinWorld->pos();
-    //get the pose from cur_frame to loop_frame
-    Vector3d relative_t; //cur_frame in loop_frame
-    Matrix3d relative_q; //cur_frame to loop_frame
-    relative_t=-R_loopTocur.transpose()*p_loopIncur;
-    relative_q=R_loopTocur.transpose();
-    //compute the pose from vio system ref to map ref (vio in map)
-    Matrix3d map_ref_R_cur_vio=map_ref_R_loop_kf*relative_q*cur_vio_R_cur_kf.transpose(); //R_wkf*R_kfcur*R_viocur.transpose()
-    Vector3d cur_kf_p_cur_vio=-cur_vio_R_cur_kf.transpose()*cur_vio_p_cur_kf;
-    Vector3d cur_loop_p_cur_vio=relative_t+relative_q*cur_kf_p_cur_vio;
-
-    Vector3d map_ref_p_cur_vio=map_ref_p_loop_kf+map_ref_R_loop_kf*cur_loop_p_cur_vio;
-
-    Matrix<double,7,1> pose_trans;
-    Vector4d q_vio_to_map = rot_2_quat(R_vio_to_map);
-    pose_trans<<q_vio_to_map,map_ref_p_cur_vio;
-    state->transform_vio_to_map->set_linp(pose_trans);
-
-    
-   return true;
-
-}
-
-
-bool VioManager::ComputeRelativePose4(Keyframe *cur_kf, Keyframe *loop_kf,Vector3d &p_loopIncur, Matrix3d &R_loopTocur) {
-    //transform rot and current pos.
-
-    
-    
-    Matrix3d R_vio_to_map= state->transform_vio_to_map->Rot();
-    Vector3d p_vio_in_map= state->transform_vio_to_map->pos();
-
-    Matrix3d R_kf_to_map= loop_kf->_Pose_KFinWorld->Rot();
-    Vector3d p_kf_in_map= loop_kf->_Pose_KFinWorld->pos();
-
-    Matrix3d R_C_to_I=state->_calib_IMUtoCAM[cur_kf->cam_id]->Rot().transpose();
-    Vector3d p_C_in_I=-R_C_to_I*state->_calib_IMUtoCAM[cur_kf->cam_id]->pos();
-
-    Matrix3d R_vio_to_I= R_C_to_I * R_loopTocur * R_kf_to_map.transpose() * R_vio_to_map;
-
-    Vector3d p_kf_in_I = p_C_in_I + R_C_to_I*p_loopIncur;;
-    Vector3d p_map_in_kf= - R_kf_to_map.transpose() * p_kf_in_map;
-
-    Matrix3d R_I_to_map = R_kf_to_map * R_loopTocur.transpose() * R_C_to_I.transpose();
-    Vector3d p_I_in_map= p_kf_in_map - R_I_to_map * p_kf_in_I;
-
-    Matrix3d R_kftoI = R_C_to_I * R_loopTocur;
-    Vector3d p_map_in_I = p_kf_in_I + R_kftoI * p_map_in_kf;
-
-    // Matrix3d R_I_to_map= R_kf_to_map * R_loopTocur.transpose() * R_C_to_I.transpose();
-    Vector3d p_I_in_vio= R_vio_to_map.transpose()*(p_I_in_map-p_vio_in_map);
-
-    Vector4d q_vio_to_I = rot_2_quat(state->_clones_IMU.at(state->_timestamp)->Rot());
-    Matrix<double,7,1> pose_cur;
-    pose_cur<<q_vio_to_I(0),q_vio_to_I(1),q_vio_to_I(2),q_vio_to_I(3),p_I_in_vio(0),p_I_in_vio(1),p_I_in_vio(2);
-    
-    state->_clones_IMU.at(state->_timestamp)->set_linp(pose_cur);
-
-
-    Matrix3d cur_vio_R_cur_I= state->_clones_IMU.at(state->_timestamp)->Rot().transpose();
-    Matrix3d cur_vio_R_cur_kf = cur_vio_R_cur_I*R_C_to_I;
-    Vector3d cur_vio_p_cur_kf = p_I_in_vio + cur_vio_R_cur_I*p_C_in_I;
-    Matrix3d map_ref_R_loop_kf;
-    Vector3d map_ref_p_loop_kf;
-    map_ref_R_loop_kf=loop_kf->_Pose_KFinWorld->Rot();
-    map_ref_p_loop_kf=loop_kf->_Pose_KFinWorld->pos();
-    //get the pose from cur_frame to loop_frame
-    Vector3d relative_t; //cur_frame in loop_frame
-    Matrix3d relative_q; //cur_frame to loop_frame
-    relative_t=-R_loopTocur.transpose()*p_loopIncur;
-    relative_q=R_loopTocur.transpose();
-    //compute the pose from vio system ref to map ref (vio in map)
-    Matrix3d map_ref_R_cur_vio=map_ref_R_loop_kf*relative_q*cur_vio_R_cur_kf.transpose(); //R_wkf*R_kfcur*R_viocur.transpose()
-    Vector3d cur_kf_p_cur_vio=-cur_vio_R_cur_kf.transpose()*cur_vio_p_cur_kf;
-    Vector3d cur_loop_p_cur_vio=relative_t+relative_q*cur_kf_p_cur_vio;
-
-    Vector3d map_ref_p_cur_vio=map_ref_p_loop_kf+map_ref_R_loop_kf*cur_loop_p_cur_vio;
-
-    Matrix<double,7,1> pose_trans;
-    Vector4d q_vio_to_map = rot_2_quat(map_ref_R_cur_vio);
-    pose_trans<<q_vio_to_map,p_vio_in_map;
-    state->transform_vio_to_map->set_linp(pose_trans);
-
-    
-   return true;
-
-}
-
-
-
-
-void VioManager::do_feature_link(Keyframe *cur_kf, Keyframe *loop_kf) {
-    double loop_id=cur_kf->time_stamp;
-    std::vector<Feature *> feats;
-    int matched_size=cur_kf->_matched_id_cur.size();
-    for (int i=0;i<matched_size;i++)
-    {
-        size_t feature_id=cur_kf->_matched_id_cur.at(i);
-        size_t feature_id_loopkf=cur_kf->_matched_id_old.at(i);
-        Feature* feat=trackFEATS->get_feature_database()->get_feature(feature_id);
-        std::unordered_map<double,size_t> m;
-        m.insert({loop_id,feature_id_loopkf});
-        feat->keyframe_matched_obs.insert({cur_kf->time_stamp,m});
-        cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<endl;
-        feats.push_back(feat);
-    }
-
-}
-
-bool VioManager::do_feature_link(double timestamp,  Keyframe *loop_kf,vector<cv::Point2f>& uv_loop, vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv)
-{
-//    size_t loop_id=cur_kf->loop_index;
-//    std::vector<Feature *> feats;
-//    int matched_size=cur_kf->_matched_id_cur.size();
-//    for (int i=0;i<matched_size;i++)
-//    {
-//        size_t feature_id=cur_kf->_matched_id_cur.at(i);
-//        size_t feature_id_loopkf=cur_kf->_matched_id_old.at(i);
-//        Feature* feat=trackFEATS->get_feature_database()->get_feature(feature_id);
-//        std::unordered_map<size_t,size_t> m;
-//        m.insert({loop_id,feature_id_loopkf});
-//        feat->keyframe_matched_obs.insert({cur_kf->time_stamp,m});
-//        cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<endl;
-//        feats.push_back(feat);
-//    }
-
-
-
-     //get the features observed at current timestamp.
-     vector<Feature*> feats=trackFEATS->get_feature_database()->features_containing(timestamp);
-     size_t cam_id=0;  
-     int count1=0;
-     int count2=0;
-     int count3=0;
-     int count4=0;
-     int count5=0;
-
-     for(int i=0;i<loop_kf->point_2d_uv.size();i++)
-     {
-         cv::Point2f pt_kf=loop_kf->point_2d_uv[i];
-         cv::Point3f pt_3d_kf=loop_kf->point_3d[i];
-         cv::Point2f pt_cur=loop_kf->matched_point_2d_uv[i];
-
-        //TODO:there should clearify the matched_point_2d_uv in which cam
-        double min_error_final=1000000;
-        double min_error_x,min_error_y;
-         auto it=feats.begin();
-         int flag=-1;
-         while(it!=feats.end()) //traverse the very features
-         {
-             auto t1=(*it)->timestamps[cam_id].begin();
-             auto t2=(*it)->uvs[cam_id].begin();
-             auto t3=(*it)->uvs_norm[cam_id].begin();
-             double min_error=1000000;
-             double min_x,min_y;
-             while(t1!=(*it)->timestamps[cam_id].end())
-             {
-                 if((*t1)==timestamp)  //find the observation at current timestamp
-                 {
-                     cv::Point2f _uv,_uv_norm;
-                     _uv.x=(*t2)(0);
-                     _uv.y=(*t2)(1);
-                     _uv_norm.x=(*t3)(0);
-                     _uv_norm.y=(*t3)(1);
-                     
-                    //  cout<<"cur_uv: ("<<_uv.x<<" "<<_uv.y<<") match_cur_uv:("<<pt_cur.x<<" "<<pt_cur.y<<")"<<endl;
-                     //cout<<"error_uv: ("<<abs(_uv.x-pt_cur.x)<<" "<<abs(_uv.y-pt_cur.y)<<")"<<endl;
-                     if((abs(_uv.x-pt_cur.x)+abs(_uv.y-pt_cur.y))*0.5<min_error)
-                     {
-                         min_error=(abs(_uv.x-pt_cur.x)+abs(_uv.y-pt_cur.y))*0.5;
-                         min_x=abs(_uv.x-pt_cur.x);
-                         min_y=abs(_uv.y-pt_cur.y);
-                         
-                     }
-                     double th=params.pixel_error;
-                     if(_uv.x<(pt_cur.x+th)&&_uv.x>(pt_cur.x-th)&&_uv.y<(pt_cur.y+th)&&_uv.y>(pt_cur.y-th))   //if the current observation is equal to the matched observation
-                     {
-                         cout<<"***********************************find feature link******************************"<<endl;
-                        //  loop_kf->loop_feature_id.push_back(loop_kf->point_id[i]); //set the loop_feature id   unnecessary
-                        //  loop_kf->match_feature_id.push_back((*it)->featid);  //set the matched feature as global feature id    unnecessary
-
-                         std::unordered_map<double,size_t> m;  //loop_kf timestamp and feature local(kf) id
-                         m.insert({loop_kf->time_stamp,i});
-                         (*it)->keyframe_matched_obs.insert({timestamp,m}); //this is the key step to make feature connection
-                         cout<<"feat->keyframe_matched_obs size: "<<(*it)->keyframe_matched_obs.size()<<endl;
-
-                         uv_loop.push_back(pt_kf);  //unncessary
-                         uv.push_back(pt_cur);
-                         uv_3d_loop.push_back(pt_3d_kf);
-                         flag=1;
-                         break;
-                     }
-                     //else the current observation is not matched with the matched observation,
-                     // so that this feature(*it) in map has not observed in current vio system.
-                     break;
-//                     uv.emplace_back(_uv);
-//                     uv_norm.emplace_back(_uv_norm);
-//                     feas_id.emplace_back((*iter1)->featid);
-                 }
-                 else
-                 {
-                     t1++;
-                     t2++;
-                     t3++;
-                 }
-
-
-             }
-            //  cout<<"min_error: ("<<min_x<<" "<<min_y<<")"<<endl;
-             if(min_error<min_error_final)
-             {
-                 min_error_final=min_error;
-                 min_error_x=min_x;
-                 min_error_y=min_y;
-             }
-             if(flag==1)
-            {
-                break;
-            } 
-             it++;
-         }
-        //  cout<<"for kf match point "<<i<<" the min error is ("<<min_error_x<<" "<<min_error_y<<")"<<endl;
-
-         if(min_error_x<10&&min_error_y<10)
-         {
-             count1++;
-         }
-         if(min_error_x<5&&min_error_y<5)
-         {
-             count2++;
-         }
-         if(min_error_x<3&&min_error_y<3)
-         {
-             count3++;
-         }
-         if(min_error_x<1&&min_error_y<1)
-         {
-             count4++;
-         }
-         if(min_error_x<params.pixel_error&&min_error_y<params.pixel_error)
-         {
-             count5++;
-         }
-
-        
-
-     }
-     cout<<"nums error<10 : "<<count1<<" nums error<5 :"<<count2<<" nums error<3 :"<<count3<<" nums error<3 :"<<count3<<endl;
-     if(count5>0)
-     {
-        return true;
-     } 
-     else
-    {
-       return false;
-    }
-
-}
-
-
-Keyframe* VioManager::get_loop_kf(State *state)
-{
-    
-    double ts= state->_timestamp;
-    ts=round(ts*10000)/10000.0;  //四舍五入保留4位小数
-    std::cout<<"in get_loop_kf"<<endl;
-    std::cout.precision(14);
-    std::cout<<"***"<<ts<<"***"<<endl;
-    KeyframeDatabase* db=state->get_kfdataBase();
-    double kf_ts=db->get_match_kf(ts);
-    std::cout<<kf_ts<<endl;
-    if(int(kf_ts)==-1)
-       return nullptr;
-     
-    Keyframe* kf=new Keyframe();
-    kf=db->get_keyframe(kf_ts);
-    double scale=1;
-    // if(state->_timestamp-last_kf_match_time>params.kf_match_interval)
-    // {
-    //     cout<<"cur_time: "<<to_string(state->_timestamp)<<" last_kf_match: "<<to_string(last_kf_match_time)<<"==========================================================================="<<endl;
-        
-    //     scale=0.5;
-    // }
-    if(kf->point_3d.size()<params.match_num_thred*scale)
-    {
-         cout<<"kfpoints size:"<<kf->point_3d.size()<<" thred:"<<params.match_num_thred*scale<<endl;
-         return nullptr;
-    } 
-    else
-    {
-       return kf;
-    }
-        
-
-
-}
 
 vector<Keyframe*> VioManager::get_loop_kfs(State *state)
 {
@@ -3043,19 +1869,25 @@ vector<Keyframe*> VioManager::get_loop_kfs(State *state)
     vector<Keyframe*> res;
     double ts= state->_timestamp;
     std::cout<<"***"<<to_string(ts)<<"***"<<endl;
-    ts=floor(ts*100)/100.0;  //保留4位小数 for euroc ;保留2位小数for kaist and eight
+    if(params.used_dataset=="euroc"||params.used_dataset=="fourseasons")
+        ts=floor(ts*10000)/10000.0;  //保留4位小数 for euroc ;保留2位小数for kaist and eight
+    else if(params.used_dataset=="kaist"||params.used_dataset=="sim")
+        ts=floor(ts*100)/100.0;
 
     std::cout<<"in get_loop_kf"<<endl;
     std::cout.precision(14);
     std::cout<<"***"<<ts<<"***"<<endl;
     KeyframeDatabase* db=state->get_kfdataBase();
-    // ts for YQ and simulation (eight not need)
-    // ts=get_approx_ts(ts);
-    // if(ts<0)
-    // {
-    //     return res;
-    // }
-    // end ts for YQ and simulation
+
+    if(params.used_dataset=="YQ")
+    {
+      ts=get_approx_ts(ts);
+      if(ts<0)
+      {
+          return res;
+      }
+    }
+
     state->_timestamp_approx=ts;
     std::cout.precision(14);
     std::cout<<"***"<<ts<<"***"<<endl;
@@ -3095,52 +1927,6 @@ vector<Keyframe*> VioManager::get_loop_kfs(State *state)
     
 
     return res;
-   
-    // if(state->_timestamp-last_kf_match_time>params.kf_match_interval)
-    // {
-    //     cout<<"cur_time: "<<to_string(state->_timestamp)<<" last_kf_match: "<<to_string(last_kf_match_time)<<"==========================================================================="<<endl;
-        
-    //     scale=0.5;
-    // }
- 
-
-
-}
-
-
-vector<cv::Point2f> VioManager::get_match_feature(double timestamp, Keyframe *loop_kf,vector<cv::Point2f>& uv_loop,vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv, vector<Feature*>& feats_with_loop)
-{
-     uv=loop_kf->matched_point_2d_uv;
-     uv_loop=loop_kf->point_2d_uv;
-     uv_3d_loop=loop_kf->point_3d;
-     assert(uv.size()==uv_loop.size());
-     assert(uv_loop.size()==uv_3d_loop.size());
-
-     //add uv feature into featuredatabase as new extracted features
-     size_t cam_id=0;
-     vector<size_t> id;
-     trackFEATS->add_features_into_database(timestamp,cam_id,uv,id);
-
-     //linke uv with uv_loop
-     vector<cv::Point2f> uv_feats;  //use to debug
-     for(int i=0;i<uv.size();i++)
-     {
-         Feature* feat=trackFEATS->get_feature_database()->get_feature(id[i]);
-         //as this feature is the new extracted feature in current image, it should only be observed once at current time
-         assert(feat->timestamps[cam_id].size()==1);
-         assert(feat->timestamps[cam_id][0]==timestamp);
-        std::unordered_map<double,size_t> m;  //loop_kf timestamp and feature local(kf) id
-        m.insert({loop_kf->time_stamp,i});
-        feat->keyframe_matched_obs.insert({timestamp,m}); //this is the key step to make feature connection
-        cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<endl;
-        cv::Point2f f;
-        f.x=feat->uvs[cam_id][0](0);
-        f.y=feat->uvs[cam_id][0](1);
-        uv_feats.push_back(f);  
-        feats_with_loop.push_back(feat);
-     }
-
-     return uv_feats;
 
 }
 
@@ -3148,9 +1934,9 @@ vector<cv::Point2f> VioManager::get_match_feature(double timestamp, Keyframe *lo
 void VioManager::get_multiKF_match_feature(double timestamp, vector<Keyframe*> loop_kfs,int &index,vector<cv::Point2f>& uv_loop,vector<cv::Point3f>& uv_3d_loop, vector<cv::Point2f>& uv, vector<Feature*>& feats_with_loop)
 {
     
-    // double ts=floor(timestamp*100)/100.0;  //保留4位小数 for euroc; 2 for kaist
+    
 
-    double ts=state->_timestamp_approx;   //for YQ
+    double ts=state->_timestamp_approx; 
     int max_match_num=0;
     double match_most_kf;
     //get the loop_kf that has most matches with current frame 
@@ -3197,33 +1983,6 @@ void VioManager::get_multiKF_match_feature(double timestamp, vector<Keyframe*> l
             }
         }
     }
-    assert(state->of_points.is_open());
-    
-    state->of_points<<"current_time: "<<to_string(state->_timestamp)<<" with "<<loop_kfs.size()<<" kf matches"<<endl<<
-    "all_uvs_cur size: "<<all_uvs_cur.size()<<" VS all_kfs_match"<<all_kfs_match<<endl;
-
-    // for(int i=0;i<loop_kfs.size();i++)
-    // {
-    //     vector<cv::Point2f> match_uvs=loop_kfs[i]->matched_point_2d_uv_map.at(ts);
-    //     size_t cam_id=0;
-    //     vector<size_t> id;
-    //     trackFEATS->add_features_into_database(timestamp,cam_id,match_uvs,id);
-    //     for(int j=0;j<match_uvs.size();j++)
-    //     {
-    //     Feature* feat=trackFEATS->get_feature_database()->get_feature(id[j]);
-    //     cv::Point2f uv_cur=match_uvs[j];
-    //     std::unordered_map<double,size_t> match; //loop_kf timestamp and feature local(kf) id
-    //     //as this feature is the new extracted feature in current image, it should only be observed once at current time
-    //     //  cout<<"feat->timestamps[cam_id].size(): "<<id[i]<<" "<<feat->timestamps[cam_id].size()<<endl;
-    //      assert(feat->timestamps[cam_id].size()==1);
-    //      assert(feat->timestamps[cam_id][0]==timestamp);
-       
-    //     match.insert({loop_kfs[i]->time_stamp,j});
-    //     feat->keyframe_matched_obs.insert({ts,match});
-    //     cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<" feat id: "<<feat->featid<<endl;
-    //     feats_with_loop.push_back(feat);
-    //     }
-    // }
 
 
      //add uv feature into featuredatabase as new extracted features
@@ -3257,312 +2016,12 @@ void VioManager::get_multiKF_match_feature(double timestamp, vector<Keyframe*> l
 
         }
         feat->keyframe_matched_obs.insert({ts,match});
-        cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<" feat id: "<<feat->featid<<endl;
         feats_with_loop.push_back(feat);
      }
   
-
-    //  //linke uv with uv_loop
-    //  vector<cv::Point2f> uv_feats;  //use to debug
-    //  for(int i=0;i<uv.size();i++)
-    //  {
-    //      Feature* feat=trackFEATS->get_feature_database()->get_feature(id[i]);
-    //      //as this feature is the new extracted feature in current image, it should only be observed once at current time
-    //      assert(feat->timestamps[cam_id].size()==1);
-    //      assert(feat->timestamps[cam_id][0]==timestamp);
-    //     std::unordered_map<double,size_t> m;  //loop_kf timestamp and feature local(kf) id
-    //     m.insert({loop_kf->time_stamp,i});
-    //     feat->keyframe_matched_obs.insert({timestamp,m}); //this is the key step to make feature connection
-    //     cout<<"feat->keyframe_matched_obs size: "<<feat->keyframe_matched_obs.size()<<endl;
-    //     cv::Point2f f;
-    //     f.x=feat->uvs[cam_id][0](0);
-    //     f.y=feat->uvs[cam_id][0](1);
-    //     uv_feats.push_back(f);  
-    //     feats_with_loop.push_back(feat);
-    //  }
-}
-
-
-void VioManager::test_feature_match(double timestamp, cv::Mat& img0, cv::Mat& img1, size_t cam_id0, size_t cam_id1)
-{
-    
-    cout<<"in test_feature_match"<<endl;
-    size_t index_0 = max_kf_id;
-    max_kf_id++;
-    Keyframe* cur_kf_0=new Keyframe(timestamp,index_0,cam_id0,img0,params.camera_intrinsics[cam_id0]);
-    double ts= timestamp;
-    ts=round(ts*10000)/10000.0;  //四舍五入保留4位小数
-    std::cout<<"in get_loop_kf"<<endl;
-    std::cout.precision(14);
-    std::cout<<"***"<<ts<<"***"<<endl;
-    KeyframeDatabase* db=state->get_kfdataBase();
-    double kf_ts=db->get_match_kf(ts);
-    std::cout<<kf_ts<<endl;
-    Keyframe* loop_kf=nullptr;
-    if(int(kf_ts)!=-1)
-    {
-        loop_kf=db->get_keyframe(kf_ts);
-    }
-    else
-    {
-        return;
-    }
-    
-    vector<cv::Point2f> features,uv_loop,uv;
-    vector<cv::Point3f> uv_3d_loop;
-    vector<Feature*> match_feature;
-    features=get_match_feature(timestamp,loop_kf,uv_loop,uv_3d_loop,uv,match_feature);
-    for(int i=0;i<uv.size();i++)
-    {
-        cout<<"kf_uv: "<<loop_kf->point_2d_uv[i]<<" match_uv: "<<loop_kf->matched_point_2d_uv[i]<<
-        " uv: "<<uv[i]<<" features: "<<features[i]<<endl;
-    }
-
-    
-
 }
 
 
 
-void VioManager::merge_same_feature()
-{
-    
-    
-    int sum=0;
-    for(int i=0;i<state->delay_loop_features.size();i++)
-    {
-        sum+=state->delay_loop_features[i].size();
-    }
-    cout<<"before merge: "<<sum<<endl;
-    // cout<<"state->delay_loop_features.size(): "<<state->delay_loop_features.size()<<endl;
-    for(int i=0;i<state->delay_loop_features.size()-1;i++)
-    {
-        for(int j=0;j<state->delay_loop_features[i].size();j++)
-        {
-            // cout<<"state->delay_loop_features[i].size(): "<<state->delay_loop_features[i].size()<<endl;
-            Feature* feat=state->delay_loop_features[i][j];
-            // cout<<"feat id: "<<feat->featid<<endl;
-            // sleep(1);
-            assert(feat!=nullptr);
-            // cout<<"get feat"<<endl;
-            double kf_id;
-            size_t feat_id_in_kf;
-            // cout<<feat->keyframe_matched_obs.size()<<endl;
-            // sleep(1);
-            assert(feat->keyframe_matched_obs.size()==1);
-            for(auto pair: feat->keyframe_matched_obs)
-            {
-                for(auto match:pair.second)
-                {
-                    kf_id=match.first;
-                    // cout<<"kf_id: "<<kf_id<<endl;
-                    feat_id_in_kf=match.second;
-                    // cout<<"feat_id_in_kf: "<<feat_id_in_kf<<endl;
-                    Keyframe* kf=state->get_kfdataBase()->get_keyframe(kf_id);
-                    // cout<<"kf_id: "<<kf->time_stamp<<endl;
-                    // cout<<"get kf"<<endl;
-                    assert(kf!=nullptr);
 
-                    double x=kf->point_2d_uv_map.at(pair.first)[feat_id_in_kf].x;
-                    double y=kf->point_2d_uv_map.at(pair.first)[feat_id_in_kf].y;
-                    // cout<<"x,y: "<<x<<" "<<y<<endl;
-                    // sleep(5);
-                    // cout<<"get xy"<<endl;
-                    for(int p=i+1;p<state->delay_loop_features.size();p++)
-                    {
-                        auto iter= state->delay_loop_features[p].begin();
-                        // cout<<"state->delay_loop_features[p].size()；"<<state->delay_loop_features[p].size()<<endl;
-                        // sleep(1);
-                        while(iter!=state->delay_loop_features[p].end())
-                        {
-                            Feature* feat2 = *iter;
-                            bool del=false;
-                            // cout<<"feat2 id: "<<feat2->featid<<endl;
-                            // cout<<feat2->keyframe_matched_obs.size()<<endl;
-                             assert(feat2->keyframe_matched_obs.size()==1);
-                            // sleep(2);
-                            for(auto pair2: feat2->keyframe_matched_obs)
-                            {
-                                auto iter2=pair2.second.begin();
-                                while(iter2!=pair2.second.end())
-                                {
-                                    if((*iter2).first==kf_id)
-                                    {
-                                       
-                                        double x2=kf->point_2d_uv_map.at(pair2.first)[(*iter2).second].x;
-                                        double y2=kf->point_2d_uv_map.at(pair2.first)[(*iter2).second].y;
-                                        // cout<<"get xy2"<<endl;
-                                        if(x==x2&&y==y2)
-                                        {
-                                            assert(feat2->uvs[0][0](0)==kf->matched_point_2d_uv_map.at(pair2.first)[(*iter2).second].x);
-                                            assert(feat2->uvs[0][0](1)==kf->matched_point_2d_uv_map.at(pair2.first)[(*iter2).second].y);
-                                        
-                                            assert(feat->timestamps[0][0]==state->delay_clones[i]);
-                                            for(int m=0;m<feat->timestamps[0].size();m++)
-                                            {
-                                                assert(feat->timestamps[0][m]!=state->delay_clones[p]);
-                                            }
-                                            feat->timestamps[0].push_back(state->delay_clones[p]);
-                                            feat->uvs[0].push_back(feat2->uvs[0][0]);
-                                            feat->uvs_norm[0].push_back(feat2->uvs_norm[0][0]);
-                                            pair2.second.erase(iter2);
-                                            cout<<"found! kf_uv:"<<x<<" "<<y<<" with query uv:"<<" ";
-                                            for(int m=0;m<feat->uvs[0].size();m++)
-                                            {
-                                                cout<<feat->uvs[0][m](0)<<" "<<feat->uvs[0][m](1)<<" ";
-
-                                            }
-                                            cout<<endl;
-                                            break;
-                                        }
-                                        break;
-
-                                    }
-                                    else
-                                    {
-                                        iter2++;
-                                    }
-                                    
-                                }
-                                if(pair2.second.empty())
-                                {
-                                    del=true;
-                                }
-                            }
-                            if(del)
-                            {
-                                state->delay_loop_features[p].erase(iter);
-                                break;
-                            }
-                            else
-                            {
-                                iter++;
-                            }
-                            
-                            
-                        }
-                    }
-
-                }
-            }
-            
-        }
-    }
-
-    sum=0;
-    for(int i=0;i<state->delay_loop_features.size();i++)
-    {
-        sum+=state->delay_loop_features[i].size();
-    }
-    cout<<"after merge: "<<sum<<endl;
-    //  sleep(2);
-
-
-    return;
-}
-
-
-void VioManager::init_relative_transformation(State* state)
-{
-  double transform_uncertianty = state->_options.transform_cov;
-  double std_pos = transform_uncertianty;
-  double std_ori = transform_uncertianty;
-  std::mt19937 gen_trans;
-  gen_trans = std::mt19937(params.sim_seed_preturb);
-  std::default_random_engine generator;
-  std::normal_distribution<double> distribution_pos(0.0,std_pos);
-  std::normal_distribution<double> distribution_ori(0.0,std_ori);
-  double ax=distribution_pos(gen_trans);
-  double ay=distribution_pos(gen_trans);
-  double az=distribution_pos(gen_trans);
-  double rx=distribution_ori(gen_trans);
-  double ry=distribution_ori(gen_trans);
-  double rz=distribution_ori(gen_trans);
-  
-  if(rx>3.14)
-  {
-        rx = rx-2*3.14;
-  }
-  if(rx<-3.14)
-  {
-        rx = 2*3.14+rx;
-  }
-  if(ry>3.14)
-  {
-        ry = ry-2*3.14;
-  }
-  if(ry<-3.14)
-  {
-        ry = 2*3.14+ry;
-  }
-  if(rz>3.14)
-  {
-        rz = rz-2*3.14;
-  }
-  if(rz<-3.14)
-  {
-        rz = 2*3.14+rz;
-  }
-  Eigen::Matrix<double,6,1> turb = Eigen::Matrix<double,6,1>::Zero();
-      
-
-  Eigen::Vector3d trans_map_in_vins = Eigen::Vector3d::Zero();
-  trans_map_in_vins(0) = trans_map_in_vins(0) + ax;
-  trans_map_in_vins(1) = trans_map_in_vins(1) + ay;
-  trans_map_in_vins(2) = trans_map_in_vins(2) + az;
-  Quaterniond q_map_to_vins(1,0,0,0);
-  Quaterniond dq(1,rx/2.0,ry/2.0,rz/2.0);
-  Quaterniond q = q_map_to_vins*dq;
-  q=q.normalized();
-
-  MatrixXd P=MatrixXd::Identity(6,6)*state->_options.transform_cov * state->_options.transform_cov;
-  // P.block(0,0,3,3) = Matrix3d::Identity() * std_ori * std_ori;
-  Matrix<double,6,6> J = MatrixXd::Zero(6,6);
-  J.block(0,0,3,3) = -q.toRotationMatrix();
-  J.block(3,0,3,3) = -skew_x(trans_map_in_vins) * q.toRotationMatrix();
-  J.block(3,3,3,3) = -Matrix3d::Identity();
-  P = J*P*J.transpose();
-
-  Matrix<double,7,1> pose_map_to_vins = Matrix<double,7,1>::Zero();
-  pose_map_to_vins<<q.x(),q.y(),q.z(),q.w(),trans_map_in_vins;
-  cout<<"relative transform is initlizied: "<<pose_map_to_vins.transpose()<<endl;
-  cout<<"error_rot: "<<rx<<" "<<ry<<" "<<rz<<endl;
-  cout<<"error_p: "<<pose_map_to_vins.block(4,0,3,1).transpose()<<endl;
-  // sleep(5);
-
-  PoseJPL* pose_tranform = new PoseJPL();
-
-    //Get total size of new cloned variables, and the old covariance size
-  int old_size = (int)state->_Cov.rows();
-  int new_loc = (int)state->_Cov.rows();
-  int nuisance_size=(int)state->_Cov_nuisance.rows();
-  // state->transform_vio_to_map->set_local_id(new_loc);
-  // state->transform_vio_to_map->set_value(pose_vio_to_map);
-  // int variable_size=state->transform_vio_to_map->size();
-  int variable_size=pose_tranform->size();
-  cout<<"old_size: "<<old_size<<" variable_size:"<<variable_size<<endl;
-
-  //augement cov and cross_cov
-  state->_Cov.conservativeResizeLike(Eigen::MatrixXd::Zero(old_size+variable_size,old_size+variable_size));
-  //set the initial transformation cov a big value.
-  state->_Cov.block(new_loc,new_loc,variable_size,variable_size)=P;
-  cout<<"P: "<<endl<<P<<endl;
-  // sleep(5);
-
-  //the cross cov of nuisance is zero
-  state->_Cross_Cov_AN.conservativeResizeLike(Eigen::MatrixXd::Zero(old_size+variable_size,nuisance_size));
-
-
-  pose_tranform->set_local_id(new_loc);
-  pose_tranform->set_value(pose_map_to_vins);
-  pose_tranform->set_linp(pose_map_to_vins);
-  pose_tranform->set_fej(pose_map_to_vins);
-  state->_variables.push_back(pose_tranform);
-  state->transform_map_to_vio=pose_tranform;
-
-  map_initialized=true;
-  state->set_transform=true;
-  
-
-}
 

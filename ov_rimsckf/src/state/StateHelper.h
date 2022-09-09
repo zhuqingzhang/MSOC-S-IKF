@@ -77,8 +77,6 @@ namespace ov_rimsckf {
         static void EKFPropagation(State *state, const std::vector<Type*> &order_NEW, const std::vector<Type*> &order_OLD,
                                    const Eigen::MatrixXd &Phi, const Eigen::MatrixXd &Q);
 
-        static void EKFPropagation2(State *state, const std::vector<Type*> &order_NEW, const std::vector<Type*> &order_OLD,
-                                   const Eigen::MatrixXd &Phi, const Eigen::MatrixXd &Q);
 
 
         /**

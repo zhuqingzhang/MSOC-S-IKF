@@ -5,8 +5,8 @@
     <!-- ================================================================ -->
 
 
-    <arg name="seed"        default="1" />
-    <arg name="fej"         default="true" />
+    <arg name="seed"        default="2" />
+    <arg name="fej"         default="false" />
     <arg name="feat_rep"    default="GLOBAL_3D" />
     <arg name="num_clones"  default="20" />
     <arg name="num_slam"    default="20" />
@@ -48,8 +48,8 @@
     <arg name="path_rect_est"   default="/tmp/traj_rect_estimate.txt" />
     <arg name="path_time"       default="/tmp/traj_timing.txt" />
     <arg name="path_transform"   default="/tmp/transform.txt" />
-    <arg name="pose_graph_filename"   default="sim_single_matching_circle_turb.txt" />
-    <arg name="keyframe_pose_filename"   default="circle_traj_cam_map_turb_ind_0.01_0.00025.txt" />  
+    <arg name="pose_graph_filename"   default="sim_single_matching_circle_turb_20_0.01_0.00025_10loop_lessmatching.txt" />
+    <arg name="keyframe_pose_filename"   default="circle_20_traj_cam_map_20loop_large_trans_turb_ind_0.01_0.00025.txt" />  
     <arg name="noise_multipler"   default="20" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
@@ -60,8 +60,8 @@
 
 
     <!-- MASTER NODE! -->
-    <node type="rviz" name="rviz_msckf" pkg="rviz" args="-d $(find ov_msckf)/launch/display_2.rviz" />
-    <node name="run_simulation" pkg="ov_msckf" type="run_simulation" output="screen" clear_params="true" required="true">
+    <node type="rviz" name="rviz_msckf_test" pkg="rviz" args="-d $(find ov_msckf)/launch/display_2.rviz" />
+    <node name="run_simulation_msckf" pkg="ov_msckf" type="run_simulation" output="screen" clear_params="true" required="true">
    <!-- <node name="run_simulation" pkg="ov_msckf" type="run_simulation" output="screen" clear_params="true" required="true" launch-prefix="gdb -ex run &#45;&#45;args"> -->
 
         <!-- =============================================== -->
@@ -95,7 +95,7 @@
         <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
         <param name="use_gt"  type="bool" value="$(arg use_gt)" />
 
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/sim_for_TRO_revised/q_horizonal_m_vertical/" />
+        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/MSOC_S_IKF_ws/src/MSOC-S-IKF/matches/sim_for_TRO_revised/q_horizonal_m_vertical/" />
         <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
 
         <!-- <param name="pose_graph_filename" type="string" value="20170828_mcloc_timeq_timer_2dq_2dr_3dr.txt" />-->
@@ -144,7 +144,7 @@
         <param name="dt_slam_delay"          type="double" value="4" />
         <param name="init_window_time"       type="double" value="0.75" />
         <param name="init_imu_thresh"        type="double" value="1.0" />
-        <rosparam param="gravity">[0.0,0.0,9.81]</rosparam>
+        <rosparam param="gravity">[0.0,0.0,9.8]</rosparam>
         <param name="feat_rep_msckf"         type="string" value="GLOBAL_3D" />
         <param name="feat_rep_slam"          type="string" value="$(arg feat_rep)" />
         <param name="feat_rep_aruco"         type="string" value="$(arg feat_rep)" />
@@ -248,22 +248,22 @@
 
     <!-- record the trajectory if enabled -->
     <group if="$(arg dosave_pose)">
-        <node name="recorder_estimate" pkg="ov_eval" type="pose_to_file" output="screen">
+        <node name="recorder_estimate_msckf" pkg="ov_eval" type="pose_to_file" output="screen">
             <param name="topic"      type="str" value="/ov_msckf/poseimu" />
             <param name="topic_type" type="str" value="PoseWithCovarianceStamped" />
             <param name="output"     type="str" value="$(arg path_est)" />
         </node>
-        <node name="recorder_groundtruth" pkg="ov_eval" type="pose_to_file" output="screen">
+        <node name="recorder_groundtruth_msckf" pkg="ov_eval" type="pose_to_file" output="screen">
             <param name="topic"      type="str" value="/ov_msckf/posegt" />
             <param name="topic_type" type="str" value="PoseStamped" />
             <param name="output"     type="str" value="$(arg path_gt)" />
         </node>
-        <node name="recorder_estimate_rect" pkg="ov_eval" type="pose_to_file" output="screen">
+        <node name="recorder_estimate_rect_msckf" pkg="ov_eval" type="pose_to_file" output="screen">
             <param name="topic"      type="str" value="/ov_msckf/poseimu_rect" />
             <param name="topic_type" type="str" value="PoseWithCovarianceStamped" />
             <param name="output"     type="str" value="$(arg path_rect_est)" />
         </node>
-        <node name="recorder_transform" pkg="ov_eval" type="pose_to_file" output="screen">
+        <node name="recorder_transform_msckf" pkg="ov_eval" type="pose_to_file" output="screen">
             <param name="topic"      type="str" value="/ov_msckf/transform" />
             <param name="topic_type" type="str" value="PoseWithCovarianceStamped" />
             <param name="output"     type="str" value="$(arg path_transform)" />
