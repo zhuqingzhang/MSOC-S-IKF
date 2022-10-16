@@ -3,6 +3,7 @@
     <!-- imu starting thresholds -->
     <arg name="init_window_time"  default="0.75" />
     <arg name="init_imu_thresh"   default="0.12" />
+    <arg name="used_dataset" default="kaist" />
 
     <!-- saving trajectory path and timing information -->
     <arg name="dosave"      default="true" />
@@ -12,16 +13,15 @@
     <arg name="path_trans"    default="/tmp/transform.txt" />
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
 
-    <arg name="ptmeas"  default="false" />
+
+    <arg name="use_schmidt" default="true" />
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="false" />
-    <arg name="pose_graph_filename" default="urban39_loc_timeq_timer_2dq_2dr_3dr.txt" />
+    <arg name="pose_graph_filename" default="urban39_matches_with_urban38.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
     <arg name="opt_thred" default="2000" />
-    <arg name="trans_fej" default="false" />
-    <arg name="path_gt" default="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/urban39_origin.txt" />
+    <arg name="path_gt" default="$(find matches)/Kaist/gt/urban39_imu.txt" />
 
 
 
@@ -34,15 +34,12 @@
         <param name="topic_camera1"  type="string" value="/stereo/right/image_raw" />
 
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
-        <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
-        <!-- <param name="pose_graph_filename" type="string" value="20170827_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
+        <param name="map_save_path" type="string" value="$(find matches)/Kaist/" />
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
-        <!-- <param name="pose_graph_filename" type="string" value="urban39_mcloc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <param name="path_gt"     type="string" value="$(arg path_gt)" />
-        <param name="keyframe_pose_filename" type="string" value="urban38_cam_origin.txt" />
+        <param name="keyframe_pose_filename" type="string" value="urban38_cam.txt" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />
         <param name="save_match_points" type="bool" value="true" />
         <param name="transform_filename" type="string" value="/tmp/transform.txt" />
@@ -67,7 +64,7 @@
 
 
         <!-- world/filter parameters -->
-        <param name="use_fej"                type="bool"   value="true" />
+        <param name="use_fej"                type="bool"   value="false" />
         <param name="use_imuavg"             type="bool"   value="true" />
         <param name="use_rk4int"             type="bool"   value="true" />
         <param name="use_stereo"             type="bool"   value="true" />

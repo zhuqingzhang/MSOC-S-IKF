@@ -3,22 +3,14 @@
     <!-- mono or stereo and what ros bag to play -->
     <arg name="max_cameras" default="2" />
     <arg name="use_stereo"  default="true" />
-    <arg name="bag_start"   default="10" /> <!-- office_loop_2: 10, 3: 5 -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_02_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_03_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V2_02_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V2_03_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_02_easy.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_03_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_04_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_05_difficult.bag" /> -->
-    <!-- <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_1/office_loop_1.bag" /> -->
+    <arg name="bag_start"   default="10" /> <!-- office_loop_2: 10-->
+    <arg name="used_dataset" default="fourseasons" />
     <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_2/office_loop_2.bag" />
-    <!-- <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_3/office_loop_3.bag" /> -->
+    
 
     <!-- imu starting thresholds -->
-    <arg name="init_window_time"  default="1.8" />   <!-- loop2, 1.45  loop3  0.75-->
-    <arg name="init_imu_thresh"   default="0.25" />    <!---loop2 0.25 loop3 0.2-->
+    <arg name="init_window_time"  default="1.45" />   <!-- loop2, 1.45-->
+    <arg name="init_imu_thresh"   default="0.25" />    <!---loop2 0.25-->
 
     <!-- saving trajectory path and timing information -->
     <arg name="dosave"      default="true" />
@@ -28,16 +20,13 @@
     <arg name="path_trans"    default="/tmp/transform.txt" />
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
    
-    <arg name="ptmeas"  default="false" />
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="true" />
-    <arg name="pose_graph_filename" default="office_loop_2_r2d2_mcloc_timeq_timer_2dq_2dr_3dr.txt" />
+    <arg name="pose_graph_filename" default="officeloop2_matches_with_officeloop1.txt" />
     <arg name="keyframe_pose_filename" default="office_loop_1_origin_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
-    <arg name="trans_fej" default="true" />
-    <arg name="use_fej" default="true" />
+    <arg name="use_fej" default="false" />
     <arg name="use_schmidt" default="true" />
 
 
@@ -48,31 +37,16 @@
         <param name="topic_imu"      type="string" value="/imu" />
         <param name="topic_camera0"  type="string" value="/img0" />
         <param name="topic_camera1"  type="string" value="/img1" />
-        
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V1_01_easy.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V1_02_medium.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V1_03_difficult.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_01_easy.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_02_medium.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_03_difficult.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_01_easy.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_02_easy.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_03_medium.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_04_difficult.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_1_cam.txt" /> -->
+
         <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_2_origin_imu.txt" />
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_3_origin_imu.txt" /> -->
+       
 
         <!-- match map parameters-->
-       <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-       <param name="multi_match" type="bool" value="$(arg multi_match)" />
-       <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
+        <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
         <param name="use_schmidt" type="bool" value="$(arg use_schmidt)" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
-        <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0828loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0129loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="map_save_path" type="string" value="$(find matches)/4Seasons/" />
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
+       
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
         <!-- <param name="path_gt"     type="string" value="/home/zzq/Code/map_open_vins_ros/src/open_vins/matches/gt_imu_20170828.txt" /> -->
         <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
@@ -81,8 +55,8 @@
         <param name="match_num_thred" type="int" value="20" />
         <param name="pixel_error" type="double" value="3.0" />
         <param name="transform_cov" type="double" value="20.0" />
-        <param name="keyframe_cov_pos" type="double" value="0.01"/>  <!--0.1 for tits-->
-        <param name="keyframe_cov_ori" type="double" value="0.0025"/>  <!--0.1 for tits-->
+        <param name="keyframe_cov_pos" type="double" value="0.01"/>  
+        <param name="keyframe_cov_ori" type="double" value="0.0025"/>  
 
         <param name="iter_num" type="int" value="0"/>
         <param name="opt_thred" type="double" value="1000"/>
@@ -101,8 +75,8 @@
         <param name="calib_cam_intrinsics"   type="bool"   value="true" />
         <param name="calib_cam_timeoffset"   type="bool"   value="true" /> <!--false-->
         <param name="calib_camimu_dt"        type="double" value="0.0" />
-        <param name="max_clones"             type="int"    value="15" /> <!--11 tits-->
-        <param name="max_slam"               type="int"    value="0" /> <!-- 75 tits-->
+        <param name="max_clones"             type="int"    value="15" /> 
+        <param name="max_slam"               type="int"    value="0" /> 
         <param name="max_slam_in_update"     type="int"    value="25" /> <!-- 25 seems to work well -->
         <param name="max_msckf_in_update"    type="int"    value="999" />
         <param name="max_cameras"            type="int"    value="$(arg max_cameras)" />

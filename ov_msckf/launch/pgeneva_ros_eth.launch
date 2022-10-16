@@ -3,6 +3,7 @@
     <!-- mono or stereo and what ros bag to play -->
     <arg name="max_cameras" default="2" />
     <arg name="use_stereo"  default="true" />
+    <arg name="used_dataset" default="euroc" />
     <arg name="bag_start"   default="0" /> <!-- v1-2: 0, mh1: 40, mh2: 35, mh3-5: 20 -->
     <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_02_medium.bag" /> -->
     <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_03_difficult.bag" /> -->
@@ -25,16 +26,14 @@
     <arg name="path_trans"    default="/tmp/transform.txt" />
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
    
-    <arg name="ptmeas"  default="false" />
+
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="true" />
-    <arg name="pose_graph_filename" default="MH_04_orb_mcloc_timeq_timer_2dq_2dr_3dr.txt" />
-    <arg name="keyframe_pose_filename" default="MH_01_easy_cam.txt" />
+    <arg name="pose_graph_filename" default="V203_matches_with_V201.txt" />
+    <arg name="keyframe_pose_filename" default="V2_01_easy_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
-    <arg name="trans_fej" default="true" />
-    <arg name="use_fej" default="true" />
+    <arg name="use_fej" default="false" />
     <arg name="use_schmidt" default="true" />
 
 
@@ -51,27 +50,21 @@
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V1_03_difficult.txt" /> -->
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_01_easy.txt" /> -->
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_02_medium.txt" /> -->
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_03_difficult.txt" /> -->
+        <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/V2_03_difficult.txt" />
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_01_easy.txt" /> -->
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_02_easy.txt" /> -->
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_03_medium.txt" /> -->
-        <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_04_difficult.txt" />
+        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_04_difficult.txt" /> -->
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/euroc_mav/MH_05_difficult.txt" /> -->
 
 
 
         <!-- match map parameters-->
-       <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-       <param name="multi_match" type="bool" value="$(arg multi_match)" />
-       <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
+        <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
         <param name="use_schmidt" type="bool" value="$(arg use_schmidt)" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
-        <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0828loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0129loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="map_save_path" type="string" value="$(find matches)/EuRoC/" />
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
-        <!-- <param name="path_gt"     type="string" value="/home/zzq/Code/map_open_vins_ros/src/open_vins/matches/gt_imu_20170828.txt" /> -->
         <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />
         <param name="save_match_points" type="bool" value="true" />
@@ -108,7 +101,7 @@
         <param name="init_imu_thresh"        type="double" value="$(arg init_imu_thresh)" />
         <rosparam param="gravity">[0.0,0.0,9.81]</rosparam>
         <param name="feat_rep_msckf"         type="string" value="GLOBAL_3D" />
-        <param name="feat_rep_slam"          type="string" value="ANCHORED_FULL_INVERSE_DEPTH" />
+        <param name="feat_rep_slam"          type="string" value="GLOBAL_3D" />
         <param name="feat_rep_aruco"         type="string" value="ANCHORED_FULL_INVERSE_DEPTH" />
 
         <!-- zero velocity update parameters -->
@@ -185,7 +178,7 @@
 
 
     </node>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_msckf)/launch/display_2.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_msckf)/launch/display.rviz" />
 
     <!-- play the dataset -->
     <node pkg="rosbag" type="play" name="rosbag" args="-d 5 -r 1 -s $(arg bag_start) $(arg bag)" required="true"/>

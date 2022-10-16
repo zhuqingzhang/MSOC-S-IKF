@@ -1368,7 +1368,7 @@ void VioManager::loadMatchinginfo(std::string map_save_path, std::string pose_gr
             image_name2=result;
             image_name_front=image_name2.substr(0,10);
             image_name_front=image_name_front+".";
-            image_name_back= (params.used_dataset=="euroc")? image_name2.substr(10,4):image_name2.substr(10,2);
+            image_name_back= (params.used_dataset=="euroc"||params.used_dataset=="fourseasons")? image_name2.substr(10,4):image_name2.substr(10,2);
             string image_name_final2=image_name_front+image_name_back;
             kf_ts=stod(image_name_final2);
         //    cout<<"***kf_ts"<<to_string(kf_ts)<<endl;
@@ -1557,10 +1557,6 @@ void VioManager::loadMatchinginfo(std::string map_save_path, std::string pose_gr
                     }
                     else if(params.used_dataset=="YQ")
                     {
-                      stringstream line1(str1);
-                      line1>>res1;
-                      double ts=stod(res1);
-                      double timestp=ts;
                       ts=floor(ts*10)/10.0; 
                     }
 

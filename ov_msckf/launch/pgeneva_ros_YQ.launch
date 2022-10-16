@@ -4,11 +4,11 @@
     <arg name="max_cameras" default="2" />
     <arg name="use_stereo"  default="true" />
     <arg name="bag_start"   default="0" /> <!-- v1-2: 0, mh1: 40, mh2: 35, mh3-5: 20 -->
-<!--     <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_01_easy.bag" /> -->
-      <!-- we need to change function load_posegraphs2, get_multiKF_feature, get_loopkfs, get_feature_jacobian_kf3 from Euroc to YQ-->
+    <arg name="used_dataset" default="YQ" />
+    <arg name="bag" default="/media/zzq/SN550/Dataset/YQ/thomas_2017-08-27-15-22-11.bag"/> 
     <!-- imu starting thresholds -->
-    <arg name="init_window_time"  default="0.75" />     <!--0.75 0.75 0.75 -->  
-    <arg name="init_imu_thresh"   default="2.5" />        <!--1   1.5   2  -->
+    <arg name="init_window_time"  default="0.75" />     <!--0.75 0.75 0.75 for YQ2,YQ3,YQ4 respectively-->  
+    <arg name="init_imu_thresh"   default="1" />        <!--1   1.5   2  for YQ2,YQ3,YQ4 respectively-->
 
     <!-- saving trajectory path and timing information -->
     <arg name="dosave"      default="true" />
@@ -18,18 +18,16 @@
     <arg name="path_trans"    default="/tmp/transform.txt" />
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
     <!-- <arg name="points_filename"    default="/tmp/match_points.txt" /> -->
-    <arg name="ptmeas"  default="false" />
+   
     <arg name="use_schmidt" default="true" />
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="false" />
-    <arg name="pose_graph_filename" default="20170827_loc_timeq_timer_2dq_2dr_3dr.txt" />
+    <arg name="pose_graph_filename" default="YQ2_matches_with_YQ1.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
-    <arg name="opt_thred" default="1000" />
-    <arg name="trans_fej" default="false" />
-    <arg name="use_fej" default="true" />
-    <arg name="path_gt" default="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/gt_imu_20170827.txt" />
+    <arg name="opt_thred" default="2000" />
+    <arg name="use_fej" default="false" />
+    <arg name="path_gt" default="$(find matches)/YQ/gt/YQ2_imu.txt" />
 
 
     <!-- MASTER NODE! -->
@@ -37,22 +35,16 @@
 
         <!-- bag topics -->
         <param name="topic_imu"      type="string" value="/mti/sensor/imu" />
-         <param name="topic_camera0"  type="string" value="/camera/left/image_rect" /> 
+        <param name="topic_camera0"  type="string" value="/camera/left/image_rect" /> 
         <param name="topic_camera1"  type="string" value="/camera/right/image_rect" /> 
-<!--         <param name="topic_camera0"  type="string" value="/pointgrey/left/image_raw/compressed" />-->
- <!--        <param name="topic_camera1"  type="string" value="/pointgrey/right/image_raw/compressed" />-->
 
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
-        <!-- <param name="pose_graph_filename" type="string" value="20170827_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="map_save_path" type="string" value="$(find matches)/YQ/" />
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
-        <!-- <param name="pose_graph_filename" type="string" value="20180129_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <param name="path_gt"     type="string" value="$(arg path_gt)" />
-        <param name="keyframe_pose_filename" type="string" value="gt_cam_20170823.txt" />
+        <param name="keyframe_pose_filename" type="string" value="YQ1_cam.txt" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />
         <param name="save_match_points" type="bool" value="true" />
         <param name="transform_filename" type="string" value="/tmp/transform.txt" />
@@ -220,7 +212,7 @@
   <!--arg name="bag_file" default="/home/dxq/data/bag/YQ/raw_data/thomas_2017-05-19-14-58-03.bag"/-->
   <!--arg name="bag_file" default="/home/turtle/data/thomas_2017-08-28-16-51-37.bag"/-->
   <!-- <arg name="bag_file" default="/media/zzq/SN550/Dataset/YQ/thomas_2017-08-23-09-40-13.bag"/> -->
-   <arg name="bag_file" default="/media/zzq/SN550/Dataset/YQ/thomas_2017-08-27-15-22-11.bag"/> 
+   <!-- <arg name="bag" default="/media/zzq/SN550/Dataset/YQ/thomas_2017-08-27-15-22-11.bag"/>  -->
    <!-- <arg name="bag_file" default="/media/zzq/SN550/Dataset/YQ/thomas_2017-08-28-17-06-06.bag"/>  -->
 <!-- <arg name="bag_file" default="/media/zzq/SN550/Dataset/YQ/thomas_2018-01-29-11-09-15.bag"/> -->
 
@@ -238,7 +230,7 @@
   <!-- -u 855-->
   <group unless="$(arg online)">
     <param name="/use_sim_time" value="true"/>
-    <node pkg="rosbag" type="play" name="player"  args="-d 8 -s 0 --clock  --rate $(arg rate) $(arg bag_file)" required="true"/>
+    <node pkg="rosbag" type="play" name="player"  args="-d 8 -s 0 --clock  --rate $(arg rate) $(arg bag)" required="true"/>
     <!--node pkg="image_transport" type="republish" name="republisher" args="compressed in:=/camera/image_raw out:=/camera/image_raw_decompressed"/-->
   </group>
 

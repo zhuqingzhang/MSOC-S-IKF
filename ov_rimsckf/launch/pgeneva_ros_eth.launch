@@ -3,6 +3,7 @@
     <!-- mono or stereo and what ros bag to play -->
     <arg name="max_cameras" default="2" />
     <arg name="use_stereo"  default="true" />
+    <arg name="used_dataset" default="euroc" />
     <arg name="bag_start"   default="0" /> <!-- v1-2: 0, mh1: 40, mh2: 35, mh3-5: 20  -->
     <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_02_medium.bag" /> -->
     <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_03_difficult.bag" /> -->
@@ -26,9 +27,7 @@
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
 
     <arg name="use_schmidt" default="true" />
-    <arg name="ptmeas"  default="false" />
-    <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="false" />  
+    <arg name="use_prior_map"  default="true" /> 
     <arg name="pose_graph_filename" default="V203_matches_with_V201.txt" />
     <arg name="keyframe_pose_filename" default="V2_01_easy_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
@@ -62,16 +61,10 @@
 
         <!-- match map parameters-->
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="false" />
         <param name="map_save_path" type="string" value="$(find matches)/EuRoC/" />
-        <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0828loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="0129loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
-        <!-- <param name="path_gt"     type="string" value="/home/zzq/Code/map_open_vins_ros/src/open_vins/matches/gt_imu_20170828.txt" /> -->
         <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />
         <param name="save_match_points" type="bool" value="true" />
@@ -159,7 +152,7 @@
 
 
         <!-- camera intrinsics -->
-        <rosparam param="cam0_wh">[752, 480]</rosparam>   <!-- rosparam以yaml来读数据，通常用于矩阵的读取-->
+        <rosparam param="cam0_wh">[752, 480]</rosparam>   
         <rosparam param="cam1_wh">[752, 480]</rosparam>
         <param name="cam0_is_fisheye" type="bool" value="false" />
         <param name="cam1_is_fisheye" type="bool" value="false" />
@@ -188,7 +181,7 @@
 
 
     </node>
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_rimsckf)/launch/display_2.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_rimsckf)/launch/display.rviz" />
 
     <!-- play the dataset -->
     <node pkg="rosbag" type="play" name="rosbag" args="-d 5 -r 1 -s $(arg bag_start) $(arg bag)" required="true"/>

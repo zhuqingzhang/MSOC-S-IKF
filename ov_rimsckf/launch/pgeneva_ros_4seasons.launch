@@ -3,22 +3,13 @@
     <!-- imu starting thresholds -->
     <arg name="max_cameras" default="2" />
     <arg name="use_stereo"  default="true" />
-    <arg name="bag_start"   default="10" /> <!-- office_loop_2: 10, 3: 5 -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_02_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V1_03_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V2_02_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/V2_03_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_02_easy.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_03_medium.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_04_difficult.bag" /> -->
-    <!-- <arg name="bag"         default="/home/zzq/DataSet/euroc_mav/MH_05_difficult.bag" /> -->
-    <!-- <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_1/office_loop_1.bag" /> -->
+    <arg name="bag_start"   default="10" /> <!-- office_loop_2: 10 -->
+    <arg name="used_dataset" default="fourseasons" />
     <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_2/office_loop_2.bag" />
-    <!-- <arg name="bag"  default="/media/zzq/BackupDrive/DataSet/4seasons/office_loop/office_loop_3/office_loop_3.bag" /> -->
 
     <!-- imu starting thresholds -->
-    <arg name="init_window_time"  default="1.45" />   <!-- loop2, 1.45  loop3  0.75-->
-    <arg name="init_imu_thresh"   default="0.25" />    <!---loop2 0.25 loop3 0.2-->
+    <arg name="init_window_time"  default="1.45" />   <!-- loop2, 1.45  -->
+    <arg name="init_imu_thresh"   default="0.25" />    <!---loop2 0.25 -->
 
     <!-- saving trajectory path and timing information -->
     <arg name="dosave"      default="true" />
@@ -28,16 +19,12 @@
     <arg name="path_trans"    default="/tmp/transform.txt" />
     <arg name="path_time"   default="/tmp/traj_timing.txt" />
    
-    <arg name="ptmeas"  default="false" />
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="true" />
     <arg name="pose_graph_filename" default="officeloop2_matches_with_officeloop1.txt" />
     <arg name="keyframe_pose_filename" default="office_loop_1_origin_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
-    <!-- <arg name="trans_fej" default="true" /> -->
-    <arg name="use_fej" default="true" />
     <arg name="use_schmidt" default="true" />
 
 
@@ -50,17 +37,12 @@
         <param name="topic_camera1"  type="string" value="/img1" />
 
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="false" />
         <param name="map_save_path" type="string" value="$(find matches)/4Seasons/" />
-        <!-- <param name="pose_graph_filename" type="string" value="20170827_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
-        <!-- <param name="pose_graph_filename" type="string" value="urban39_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
         <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_2_origin_imu.txt" />
-        <!-- <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_3_origin_imu.txt" /> -->
-         <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
+        <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />
         <param name="save_match_points" type="bool" value="true" />
         <param name="transform_filename" type="string" value="/tmp/transform.txt" />
@@ -73,16 +55,11 @@
         <param name="iter_num" type="int" value="0"/>
         <param name="opt_thred" type="double" value="1000"/>
 
-        
-
         <param name="brief_pattern_filename" type="string" value="brief_pattern.yml" />
         <param name="voc_filename" type="string" value="brief_k10L6.bin" />
 
         <param name="kf_match_interval" type="double" value="0" />
         <param name="use_robust_match" type="bool" value="true" />
-
-
-
 
         <!-- world/filter parameters -->
         <param name="use_fej"                type="bool"   value="false" />
