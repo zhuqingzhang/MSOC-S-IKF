@@ -29,7 +29,7 @@
     <arg name="ptmeas"  default="false" />
     <arg name="use_prior_map"  default="true" />
     <arg name="multi_match"  default="false" />  
-    <arg name="pose_graph_filename" default="V2_03_loc_timeq_timer_2dq_2dr_3dr.txt" />
+    <arg name="pose_graph_filename" default="V203_matches_with_V201.txt" />
     <arg name="keyframe_pose_filename" default="V2_01_easy_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
@@ -66,7 +66,7 @@
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
         <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
         <param name="trans_fej" type="bool" value="false" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
+        <param name="map_save_path" type="string" value="$(find matches)/EuRoC/" />
         <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <!-- <param name="pose_graph_filename" type="string" value="0828loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <!-- <param name="pose_graph_filename" type="string" value="0129loc_timeq_timer_2dq_2dr_3dr.txt" /> -->

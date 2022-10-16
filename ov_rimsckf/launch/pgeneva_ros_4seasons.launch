@@ -31,7 +31,7 @@
     <arg name="ptmeas"  default="false" />
     <arg name="use_prior_map"  default="true" />
     <arg name="multi_match"  default="true" />
-    <arg name="pose_graph_filename" default="office_loop_2_r2d2_mcloc_timeq_timer_2dq_2dr_3dr.txt" />
+    <arg name="pose_graph_filename" default="officeloop2_matches_with_officeloop1.txt" />
     <arg name="keyframe_pose_filename" default="office_loop_1_origin_cam.txt" />
     <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
@@ -54,11 +54,11 @@
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
         <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
         <param name="trans_fej" type="bool" value="false" />
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/" />
+        <param name="map_save_path" type="string" value="$(find matches)/4Seasons/" />
         <!-- <param name="pose_graph_filename" type="string" value="20170827_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <!-- <param name="pose_graph_filename" type="string" value="urban39_loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
         <param name="pose_graph_filename" type="string" value="$(arg pose_graph_filename)" />
-         <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_2_origin_imu.txt" />
+        <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_2_origin_imu.txt" />
         <!-- <param name="path_gt"     type="string" value="$(find ov_data)/4seasons/office_loop_3_origin_imu.txt" /> -->
          <param name="keyframe_pose_filename" type="string" value="$(arg keyframe_pose_filename)" />
         <param name="points_filename" type="string" value="/tmp/match_points.txt" />

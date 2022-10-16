@@ -24,9 +24,28 @@ This repository is currently only support ROS1. All the dependencies is the as t
 
 ## Usage
 
+```
+$mkdir -p catkin_ws/src
+$cd catkin_ws/src
+$git clone https://github.com/zhuqingzhang/MSOC-S-IKF.git
+$catkin_make
+$source devel/setup.bash
+$roslaunch ov_rimsckf pgeneva_ros_eth.launch
+```
 
+Note that before running the command of the last line, make sure the corresponding parameters in the launch file "pgeneva_ros_eth.launch" are correctly configured:
 
+For each launch file, there are some key parameters need to be modified. 
 
+* Make sure the played rosbag is correct.  User may modify the roslaunch parameters "bag", "bag_start" to decide which rosbag is selected and from which second of the rosbag to play. Alternately, users can choose to comment the rosbag play node in the roslaunch file, and open another terminal to play the rosbag. For example, to play the V203 sequence of EuRoC datasets, users can utilize the following command:
+
+  ```
+  $rosbag play V2_03_difficult.bag -s 0 --pause
+  ```
+
+* Modify the roslaunch parameter "pose_graph_filename" and "keyframe_pose_filename" to choose the correct matching information and map keyframe poses. For example, When we perform localization on V203 against V201, i.e.,  V201 is used as a prior map while V203 is online playing, then "pose_graph_filename" should be set as "V203_matches_with_V201.txt", and "keyframe_pose_filename" should be set as "V2_01_easy_cam.txt". 
+* The parameter "use_schmidt" decides whether the algorithm use Schmidt update or not
+* The parameter "use_prior_map" decides whether the algorithm is running with a prior map or just running as a pure odometry.
 
 
 
@@ -61,7 +80,7 @@ This repository is currently only support ROS1. All the dependencies is the as t
 ## Supplementary Material
 
 The provided supplementary.pdf in the folder 'docs' is the SUPPLEMENTARY of our submitted manuscript "Toward Consistent and Efficient Map-based Visual-inertial Localization: Theory Framework and Filter Design" (Readers can find the first-version manuscript through [this link](https://arxiv.org/abs/2204.12108)). 
-Alternatively, readers can also access the supplementrary with [this link](https://drive.google.com/file/d/1TID9CVy3xAso9vs05qDj3s5gU1TJQBwh/view?usp=sharing). 
+Alternatively, readers can also access the supplementary with [this link](https://drive.google.com/file/d/1TID9CVy3xAso9vs05qDj3s5gU1TJQBwh/view?usp=sharing). 
 
 
 ## <span id="dataset">Used Dataset</span>
