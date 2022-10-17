@@ -7,6 +7,7 @@
 
     <arg name="seed"        default="3" />
     <arg name="fej"         default="false" />
+    <arg name="used_dataset" default="sim" />
     <arg name="feat_rep"    default="GLOBAL_3D" />
     <arg name="num_clones"  default="20" />
     <arg name="num_slam"    default="20" />
@@ -52,8 +53,8 @@
     <arg name="path_rect_est"   default="/tmp/traj_rect_estimate.txt" />
     <arg name="path_time"       default="/tmp/traj_timing.txt" />
     <arg name="path_transform"   default="/tmp/transform.txt" />
-    <arg name="pose_graph_filename"   default="sim_single_matching_circle_turb.txt" />
-    <arg name="keyframe_pose_filename"   default="circle_traj_cam_map_turb_ind_0.01_0.00025.txt" />  
+    <arg name="pose_graph_filename"   default="scenario_2.txt" />  <!--scenario_2_perfect for perfect map test-->
+    <arg name="keyframe_pose_filename"   default="imperfect_map_keyframe.txt" />   <!--perfect_map_keyframe for perfect map test-->
     <arg name="noise_multipler"   default="20" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
@@ -71,8 +72,8 @@
         <!-- SIMULATION PARAMETERS -->
         <!-- =============================================== -->
 
-        <param name="sim_traj_path"          type="string" value="$(find ov_data)/sim/sim_for_TRO_revised/q_horizonal_m_vertical/$(arg dataset)" />
-        <param name="sim_traj_path_turb"     type="string" value="$(find ov_data)/sim/sim_for_TRO_revised/q_horizonal_m_vertical/$(arg dataset_turb)" />
+        <param name="sim_traj_path"          type="string" value="$(find ov_data)/sim/q_horizonal_m_vertical/$(arg dataset)" />
+        <param name="sim_traj_path_turb"     type="string" value="$(find ov_data)/sim/q_horizonal_m_vertical/$(arg dataset_turb)" />
         <param name="sim_seed_state_init"    type="int"    value="0" />
         <param name="sim_seed_measurements"  type="int"    value="$(arg seed)" />
         <param name="sim_seed_preturb"       type="int"    value="$(arg seed)" />
@@ -92,14 +93,12 @@
 
         <!-- =============================================== -->
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
         <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
         <param name="use_gt" type="bool" value="$(arg use_gt)" />
         
 
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/IEKF_OpenVINS_Localization_ws/src/openvins/matches/sim_for_TRO_revised/q_horizonal_m_vertical/" />
+        <param name="map_save_path" type="string" value="$(find matches)/sim/" />
         <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
 
         <!-- <param name="pose_graph_filename" type="string" value="20170828_mcloc_timeq_timer_2dq_2dr_3dr.txt" /> -->

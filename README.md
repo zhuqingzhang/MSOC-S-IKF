@@ -30,6 +30,7 @@ This repository is currently only support ROS1. All the dependencies is the as t
 $mkdir -p catkin_ws/src
 $cd catkin_ws/src
 $git clone https://github.com/zhuqingzhang/MSOC-S-IKF.git
+$cd ..
 $catkin_make
 $source devel/setup.bash
 ##For EuRoC dataset, run the following command
@@ -41,7 +42,7 @@ $roslaunch ov_rimsckf pgeneva_ros_4seasons.launch
 ##For YQ dataset, run the following command
 $roslaunch ov_rimsckf pgeneva_ros_YQ.launch
 ##For the simulation data, run the following command
-@roslaunch ov_rimsckf pgeneva_sim_rect_circle.launch
+$roslaunch ov_rimsckf pgeneva_sim_rect_circle.launch
 ```
 
 ### parameters

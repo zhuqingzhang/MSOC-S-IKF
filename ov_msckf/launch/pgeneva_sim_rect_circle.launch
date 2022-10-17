@@ -6,6 +6,7 @@
 
 
     <arg name="seed"        default="2" />
+    <arg name="used_dataset" default="sim" />
     <arg name="fej"         default="false" />
     <arg name="feat_rep"    default="GLOBAL_3D" />
     <arg name="num_clones"  default="20" />
@@ -16,25 +17,18 @@
     <arg name="freq_cam"    default="10" />
     <arg name="freq_imu"    default="400" />
 
-    <!-- udel_gore, udel_gore_zupt, tum_corridor1_512_16_okvis, udel_arl, udel_neighborhood -->
     <!-- <arg name="dataset"    default="MH_02_easy.txt" />    -->
     <arg name="dataset"    default="circle_20_traj_imu_query_10loop.txt" /> 
     <arg name="dataset_turb"    default="circle_20_traj_imu_query_10loop.txt" />  
-        <!-- <arg name="dataset"    default="circle_20_traj_imu_query.txt" /> 
-    <arg name="dataset_turb"    default="circle_20_traj_imu_query.txt" />     -->
-    <!-- <arg name="dataset"    default="MH_04_difficult.txt" />  -->
-    <!-- <arg name="dataset"    default="MH_05_difficult.txt" />  -->
+      
 
 
     <!-- if we should perturb the initial state values (i.e. calibration) -->
     <arg name="sim_do_perturbation" default="false" />
     <arg name="sim_do_calibration"  default="false" />
-    <arg name="ptmeas"  default="false" />
     <arg name="use_schmidt" default="true" />
     <arg name="use_prior_map"  default="true" />
-    <arg name="multi_match"  default="false" />
-    <arg name="trans_fej"  default="false" />
-    <arg name="use_gt"  default="false" />
+
 
     <!-- saving trajectory paths -->
     <arg name="dosave_pose"     default="true" />
@@ -48,8 +42,8 @@
     <arg name="path_rect_est"   default="/tmp/traj_rect_estimate.txt" />
     <arg name="path_time"       default="/tmp/traj_timing.txt" />
     <arg name="path_transform"   default="/tmp/transform.txt" />
-    <arg name="pose_graph_filename"   default="sim_single_matching_circle_turb_20_0.01_0.00025_10loop_lessmatching.txt" />
-    <arg name="keyframe_pose_filename"   default="circle_20_traj_cam_map_20loop_large_trans_turb_ind_0.01_0.00025.txt" />  
+    <arg name="pose_graph_filename"   default="scenario_1.txt" />
+    <arg name="keyframe_pose_filename"   default="imperfect_map_keyframe.txt" />  
     <arg name="noise_multipler"   default="20" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
@@ -68,8 +62,8 @@
         <!-- SIMULATION PARAMETERS -->
         <!-- =============================================== -->
 
-        <param name="sim_traj_path"          type="string" value="$(find ov_data)/sim/sim_for_TRO_revised/q_horizonal_m_vertical/$(arg dataset)" />
-        <param name="sim_traj_path_turb"     type="string" value="$(find ov_data)/sim/sim_for_TRO_revised/q_horizonal_m_vertical/$(arg dataset_turb)" />
+        <param name="sim_traj_path"          type="string" value="$(find ov_data)/sim/q_horizonal_m_vertical/$(arg dataset)" />
+        <param name="sim_traj_path_turb"     type="string" value="$(find ov_data)/sim/$(arg dataset_turb)" />
         <param name="sim_seed_state_init"    type="int"    value="0" />
         <param name="sim_seed_measurements"  type="int"    value="$(arg seed)" />
         <param name="sim_seed_preturb"       type="int"    value="$(arg seed)" />
@@ -89,13 +83,11 @@
 
         <!-- =============================================== -->
         <param name="use_prior_map" type="bool" value="$(arg use_prior_map)" />
-        <param name="multi_match" type="bool" value="$(arg multi_match)" />
         <param name="use_schmidt" type="bool"  value="$(arg use_schmidt)" />
-        <param name="ptmeas" type="bool" value="$(arg ptmeas)" />
-        <param name="trans_fej" type="bool" value="$(arg trans_fej)" />
-        <param name="use_gt"  type="bool" value="$(arg use_gt)" />
+        <param name="use_gt"  type="bool" value="false" />
+        <param name="used_dataset" type="string" value="$(arg used_dataset)" />
 
-        <param name="map_save_path" type="string" value="/home/zzq/Code/Invariant-EKF-Stuff/MSOC_S_IKF_ws/src/MSOC-S-IKF/matches/sim_for_TRO_revised/q_horizonal_m_vertical/" />
+        <param name="map_save_path" type="string" value="$(find matches)/sim/" />
         <!-- <param name="pose_graph_filename" type="string" value="0827loc_timeq_timer_2dq_2dr_3dr.txt" /> -->
 
         <!-- <param name="pose_graph_filename" type="string" value="20170828_mcloc_timeq_timer_2dq_2dr_3dr.txt" />-->
