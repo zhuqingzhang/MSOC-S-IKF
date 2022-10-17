@@ -6,9 +6,9 @@ This repository contains the source code of the algorithm __MSOC-S-IKF__ (Multip
 
 The folder '__ov_rimsckf__' is the main body of __MSOC-S-IKF__, where we implemented a right-invariant EKF version of Open-VINS, and the right-invriant EKF vins is combined with the Schmidt EKF and the Observability-Constraint technique to get our __MSOC-S-IKF__. 
 
-The folder '**ov_msckf**' contains an extended version of  the original Open-VINS, where we implemented a Schmidt EKF for  map-based visual inertial localization. This block can be used as a baseline to compare with the '**ov_rimsckf**'. The algorithms "**MSC-EKF**" and "**MSC-S-EKF**" in our manuscript are from this package.
+The folder '**ov_msckf**' contains an extended version of  the original Open-VINS, where we implemented a Schmidt EKF for  map-based visual inertial localization. This block can be used as a baseline to compare with the '**ov_rimsckf**'. The algorithms "**MSC-EKF**" and "**MSC-S-EKF**" in our manuscript are from this package. The main difference between  '__ov_rimsckf__' and '**ov_msckf**' is that the former is based on the right invariant EKF while the latter is based  on standard EKF.
 
-The folder '**matches**' provides feature matching information between the query sequences and the maps on  different [used dataset](#dataset) . 
+The folder '**matches**' provides feature matching information between the query sequences and the maps on  different [used dataset](#dataset). And the subfolder '**gt**'  provides corresponding ground truth. 
 
 The folder '**ov_eval**' provides the modules for evaluating the algorithms performances. Compared with the original 'ov_eval' from Open-VINS, we added some tools to evaluate the performance of invariant-EKF-based algorithms, e.g., "error_invariant_singlerun" and "error_dataset". 
 
@@ -65,10 +65,47 @@ For each launch file, there are some key parameters need to be modified.
 
 * The parameter "**use_prior_map**" decides whether the algorithm is running with a prior map or just running as a pure odometry.
 
+* The parameter "**path_est**" defines the output file in which the **local-pose**  data in the local inertial reference frame L is recorded
+
+* The parameter "**path_rect_est**" defines the output file in which the **map-pose** data in the map reference frame G is recorded
+
+* The parameter "**path_trans**/**path_transform**" defines the output file in which the **augmented variable**, i.e., the relative transformation between L and G,  is recorded
+
 
 
 ## Example
 
+* Running the  code on EuRoC dataset:
+
+```
+$roslaunch ov_rimsckf pgeneva_ros_eth.launch
+```
+
+​     Our original roslaunch file plays V203 rosbag and utilizes V201 map information. If everything goes well,  the user should see the following interface:
+
+![image](https://github.com/zhuqingzhang/MSOC-S-IKF/blob/main/docs/demo_euroc.png)
+
+where the green trajectory is the odometry trajectory in the local inertial reference frame L, corresponding to the **local-pose** in the paper, the red trajectory is the pose in the map reference frame G, corresponding to the **map-pose** in the paper, and the cyan trajectory is the ground truth in the map reference frame G. The white dots are the locations where the map-based observations occur.
+
+* Running the simulation dataset:
+
+``` 
+$roslaunch ov_rimsckf pgeneva_sim_rect_circle.launch
+```
+
+​     Our original roslaunch file perform simulation based on Scenario_2 in the supplementary material. Users can change the parameter "**seed**" to generate different noise. If everything goes well,  the user should see the following interface:
+
+![image](https://github.com/zhuqingzhang/MSOC-S-IKF/blob/main/docs/demo_sim.png)
+
+* Evaluation:
+
+​      Based on the output files, the author could evaluate the results by comparing the results with the groundtruth files provided in "**matches/.../gt/**". Users can utilize the "**ov_eval**" package to perform evaluation:
+
+``` 
+$rosrun ov_eval error_singlerun none gt_file.txt output_file.txt
+```
+
+The commonly used command include "**error_singlerun/error_invariant_singlerun**",  "**error_dataset**", and "**plot_trajectories**". For the detailed instruction, please refer to [this link](https://docs.openvins.com/eval-error.html).  There is one important thing when performing evalutaion: If the user running the program based on "**ov_msckf**" package, then "**error_singlerun**" should be used instead of the "**error_invariant_singlerun**".  If the user running the program based on "**ov_rimsckf**" package, then "**error_invariant_singlerun**" should be used. 
 
 
 

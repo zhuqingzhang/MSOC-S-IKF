@@ -42,9 +42,9 @@
     <arg name="path_rect_est"   default="/tmp/traj_rect_estimate.txt" />
     <arg name="path_time"       default="/tmp/traj_timing.txt" />
     <arg name="path_transform"   default="/tmp/transform.txt" />
-    <arg name="pose_graph_filename"   default="scenario_1.txt" />
+    <arg name="pose_graph_filename"   default="scenario_2.txt" />
     <arg name="keyframe_pose_filename"   default="imperfect_map_keyframe.txt" />  
-    <arg name="noise_multipler"   default="20" /> 
+    <arg name="noise_multipler"   default="1" /> 
     <arg name="meas_noise_multipler" default="1" />
     <arg name="meas_noise" default="1" />
 
