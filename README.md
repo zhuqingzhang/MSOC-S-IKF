@@ -18,7 +18,7 @@ The folder '**docs**' provides our original paper and the related supplementary 
 
 ## Supplementary Material
 
-The provided **supplementary.pdf** in the folder 'docs' is the SUPPLEMENTARY of our submitted paper "**Toward Consistent and Efficient Map-based Visual-inertial Localization: Theory Framework and Filter Design**". Alternatively, readers can also access the supplementary with [this link](https://drive.google.com/file/d/1TID9CVy3xAso9vs05qDj3s5gU1TJQBwh/view?usp=sharing).  
+The provided **Supplementary_Material.pdf** in the folder 'docs' is the SUPPLEMENTARY of our submitted paper "**Toward Consistent and Efficient Map-based Visual-inertial Localization: Theory Framework and Filter Design**". Alternatively, readers can also access the supplementary with [this link](https://drive.google.com/file/d/1TID9CVy3xAso9vs05qDj3s5gU1TJQBwh/view?usp=sharing).  
 
 ## Installation
 This repository is currently only support ROS1. All the dependencies is the as those in Open-VINS. You can follow the guidance of [Open-VINS Installation](https://docs.openvins.com/gs-installing.html) to install the dependencies.
@@ -119,5 +119,5 @@ In the paper, there are four kinds of datasets are used.
 
 - [4seasons](https://www.4seasons-dataset.com)
 
-- Our own collected dataset, [YQ](https://pan.baidu.com/s/1Bxcp8u4UOwul0rEPQh96oQ?pwd=szf5)
+- The dataset collected by ourselves, [YQ](https://pan.baidu.com/s/1Bxcp8u4UOwul0rEPQh96oQ?pwd=szf5)
 
